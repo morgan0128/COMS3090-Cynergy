@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>allEventsFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">allEventsFragment.java</span></div><h1>allEventsFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SearchView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.EventAdapter;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L31">public class allEventsFragment extends Fragment {</span>
+    private RecyclerView recyclerView;
+    private EventAdapter adapter;
+    private SearchView eventSv;
+<span class="fc" id="L35">    private final List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+
+    private  JSONObject userDetails;
+    private String userDetailString;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+<span class="fc" id="L46">        View view = inflater.inflate(R.layout.fragment_all_events, container, false);</span>
+
+
+<span class="fc" id="L49">        recyclerView = view.findViewById(R.id.recyclerView);</span>
+<span class="fc" id="L50">        eventSv = view.findViewById(R.id.searchEvents);</span>
+<span class="fc" id="L51">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="fc" id="L53">        Bundle args = getArguments();</span>
+<span class="fc" id="L54">        handleArguments(args);</span>
+
+<span class="fc" id="L56">        makeAllEventRequest();</span>
+
+<span class="fc" id="L58">        searchViewFunctionality();</span>
+
+
+<span class="fc" id="L61">        return view;</span>
+
+    }
+
+    private void handleArguments(Bundle args){
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (args != null) {</span>
+<span class="fc" id="L67">            userDetailString = args.getString(&quot;userDetails&quot;);</span>
+            try {
+<span class="fc" id="L69">                userDetails = new JSONObject(userDetailString);</span>
+<span class="nc" id="L70">            } catch (JSONException e) {</span>
+<span class="nc" id="L71">                throw new RuntimeException(e);</span>
+<span class="fc" id="L72">            }</span>
+        }
+<span class="fc" id="L74">    }</span>
+
+    private void searchViewFunctionality(){
+<span class="fc" id="L77">        eventSv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {</span>
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (adapter != null) adapter.filter(s);</span>
+<span class="nc" id="L81">                return true;</span>
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                if (adapter != null) adapter.filter(s);</span>
+<span class="nc" id="L87">                return true;</span>
+            }
+        });
+<span class="fc" id="L90">    }</span>
+
+<span class="fc" id="L92">    private boolean eventsLoaded = false;</span>
+
+    @Override
+    public void onResume() {
+<span class="fc" id="L96">        super.onResume();</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (!eventsLoaded) {</span>
+<span class="fc" id="L98">            makeAllEventRequest();</span>
+<span class="fc" id="L99">            eventsLoaded = true;</span>
+        }
+<span class="fc" id="L101">    }</span>
+
+    private void populateEvents(JSONArray response) throws JSONException {
+<span class="fc" id="L104">        eventList.clear();</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="fc" id="L106">            JSONObject obj = response.getJSONObject(i);</span>
+<span class="fc" id="L107">            eventList.add(new EventItem(</span>
+<span class="fc" id="L108">                    obj.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L109">                    obj.getString(&quot;eventName&quot;),</span>
+<span class="fc" id="L110">                    obj.getString(&quot;eventTime&quot;),</span>
+<span class="fc" id="L111">                    obj.getString(&quot;eventLocation&quot;),</span>
+<span class="fc" id="L112">                    obj.getString(&quot;eventDate&quot;),</span>
+<span class="fc" id="L113">                    obj.getString(&quot;description&quot;)</span>
+            ));
+        }
+
+        // Only fetch user events once
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (adapter == null) {</span>
+<span class="fc" id="L119">            getUserEvents(userDetails.getInt(&quot;id&quot;));</span>
+        } else {
+<span class="nc" id="L121">            adapter.notifyDataSetChanged();</span>
+        }
+<span class="fc" id="L123">    }</span>
+
+    private void makeAllEventRequest() {
+<span class="fc" id="L126">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events&quot;;</span>
+
+<span class="fc" id="L128">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, server_url, null,</span>
+<span class="fc" id="L129">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+
+                        try {
+<span class="fc" id="L134">                            populateEvents(response);</span>
+<span class="nc" id="L135">                        } catch (JSONException e) {</span>
+<span class="nc" id="L136">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L137">                        }</span>
+
+<span class="fc" id="L139">                    }</span>
+<span class="fc" id="L140">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+<span class="nc" id="L144">            }</span>
+        });
+<span class="fc" id="L146">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L147">    }</span>
+
+    private void getUserEvents(int userId){
+<span class="fc" id="L150">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; + userId;</span>
+<span class="fc" id="L151">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET,</span>
+                server_url,
+                null,
+<span class="fc" id="L154">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray jsonArray) {
+
+                        try {
+<span class="fc" id="L159">                            adapter = new EventAdapter(requireContext(), eventList, jsonArray, false, userDetailString,</span>
+<span class="fc" id="L160">                                    getParentFragmentManager());</span>
+<span class="nc" id="L161">                        } catch (JSONException e) {</span>
+<span class="nc" id="L162">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L163">                        }</span>
+<span class="fc" id="L164">                        recyclerView.setAdapter(adapter);</span>
+<span class="fc" id="L165">                    }</span>
+                },
+<span class="fc" id="L167">                new Response.ErrorListener(){</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L170">                        JSONArray userEvents = null;</span>
+<span class="nc" id="L171">                    }</span>
+                });
+
+<span class="fc" id="L174">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L175">    }</span>
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

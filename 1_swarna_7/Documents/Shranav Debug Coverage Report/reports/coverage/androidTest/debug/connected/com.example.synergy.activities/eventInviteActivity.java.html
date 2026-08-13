@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>eventInviteActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">eventInviteActivity.java</span></div><h1>eventInviteActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.InviteFriendAdapter;
+import com.example.synergy.items.EventInvite;
+import com.example.synergy.items.Friend;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L33">public class eventInviteActivity extends AppCompatActivity {</span>
+
+    private Button backButton;
+    private RecyclerView inviteRv;
+    private InviteFriendAdapter adapter;
+    private String userDetailString;
+    private List&lt;EventInvite&gt; inviteFriends;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L43">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L44">        EdgeToEdge.enable(this);</span>
+<span class="fc" id="L45">        setContentView(R.layout.activity_event_invites);</span>
+<span class="fc" id="L46">        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.event_invites), (v, insets) -&gt; {</span>
+<span class="fc" id="L47">            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="fc" id="L48">            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="fc" id="L49">            return insets;</span>
+        });
+
+<span class="fc" id="L52">        handleExtras();</span>
+<span class="fc" id="L53">        setUpUI();</span>
+        try {
+<span class="fc" id="L55">            fetchFriends();</span>
+<span class="nc" id="L56">        } catch (JSONException e) {</span>
+<span class="nc" id="L57">            throw new RuntimeException(e);</span>
+<span class="fc" id="L58">        }</span>
+
+
+<span class="fc" id="L61">        backButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L64">                finish();</span>
+<span class="nc" id="L65">            }</span>
+        });
+
+<span class="fc" id="L68">    }</span>
+
+    private void handleExtras(){
+<span class="fc" id="L71">        Bundle extras = getIntent().getExtras();</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        assert extras != null;</span>
+<span class="fc" id="L73">        userDetailString = extras.getString(&quot;userDetails&quot;);</span>
+<span class="fc" id="L74">    }</span>
+
+    private void setUpUI(){
+<span class="fc" id="L77">        backButton = findViewById(R.id.backFromInvitesToHome);</span>
+<span class="fc" id="L78">        inviteRv = findViewById(R.id.invite_rv);</span>
+<span class="fc" id="L79">        inviteRv.setLayoutManager(new LinearLayoutManager(this));</span>
+<span class="fc" id="L80">        inviteFriends = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L81">        adapter = new InviteFriendAdapter(this, inviteFriends, userDetailString);</span>
+<span class="fc" id="L82">        inviteRv.setAdapter(adapter);</span>
+
+<span class="fc" id="L84">    }</span>
+
+
+    private void fetchFriends() throws JSONException {
+<span class="fc" id="L88">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="fc" id="L89">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L90">        String server_url =&quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/&quot; + userId;</span>
+
+
+<span class="fc" id="L93">        @SuppressLint(&quot;NotifyDataSetChanged&quot;) JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+                this::handlingFriendsSuccess,
+                error -&gt; {
+<span class="nc" id="L99">                    Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L100">                    Toast.makeText(this, &quot;Failed to load friends&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L101">                }</span>
+        );
+
+<span class="fc" id="L104">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+
+<span class="fc" id="L106">    }</span>
+
+    private void handlingFriendsSuccess(JSONArray response){
+<span class="fc" id="L109">        inviteFriends.clear();</span>
+        // response is a JsonArray so we loop through this
+        // array to get the Friend JsonObject
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+            try {
+
+<span class="fc" id="L115">                JSONObject object = response.getJSONObject(i);</span>
+                JSONObject friendObject;
+<span class="fc" id="L117">                friendObject = object.getJSONObject(&quot;friend&quot;);</span>
+
+<span class="fc" id="L119">                inviteFriends.add(new EventInvite(new Friend(friendObject)));</span>
+<span class="nc" id="L120">            } catch (JSONException e) {</span>
+<span class="nc" id="L121">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L122">            }</span>
+        }
+<span class="fc" id="L124">        adapter.notifyDataSetChanged();</span>
+<span class="fc" id="L125">    }</span>
+
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

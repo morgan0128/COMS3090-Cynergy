@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>myEventsReviewAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">myEventsReviewAdapter.java</span></div><h1>myEventsReviewAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.content.Context;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.synergy.R;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.sheets.myEventReviewsSheet;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
+import java.util.Set;
+
+public class myEventsReviewAdapter  extends RecyclerView.Adapter&lt;myEventsReviewAdapter.myEventsReviewViewHolder&gt;{
+
+    private FragmentManager fragmentManger;;
+    private String userDetails;
+    private Context context;
+    private List&lt;EventItem&gt; eventList;
+
+<span class="fc" id="L33">    public myEventsReviewAdapter(Context context, String userDetails, List&lt;EventItem&gt; eventList, FragmentManager fragmentManager){</span>
+<span class="fc" id="L34">        this.context = context;</span>
+<span class="fc" id="L35">        this.eventList = eventList;</span>
+<span class="fc" id="L36">        this.userDetails = userDetails;</span>
+<span class="fc" id="L37">        this.fragmentManger = fragmentManager;</span>
+<span class="fc" id="L38">    }</span>
+
+    @NonNull
+    @Override
+    public myEventsReviewViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType){
+<span class="fc" id="L43">        View view = LayoutInflater.from(context).inflate(R.layout.item_button, parent, false);</span>
+<span class="fc" id="L44">        return new myEventsReviewViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull myEventsReviewViewHolder holder, int position){
+<span class="fc" id="L49">        EventItem item = eventList.get(position);</span>
+
+<span class="fc" id="L51">        holder.eventTitle.setText(item.getEventName());</span>
+<span class="fc" id="L52">        holder.eventDetails.setText(item.getEventTime() + &quot; | &quot;+ item.getEventDate() + &quot; | &quot; +</span>
+<span class="fc" id="L53">                item.getEventLocation());</span>
+
+
+<span class="fc" id="L56">        holder.eventCard.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+//                Start sheet to view all reviews of my event here
+<span class="nc" id="L60">                myEventReviewsSheet sheet =</span>
+<span class="nc" id="L61">                        myEventReviewsSheet.newInstance(userDetails, item.getId(), item.getEventName());</span>
+
+<span class="nc" id="L63">                sheet.show(fragmentManger, &quot;my_event_reviews&quot;);</span>
+<span class="nc" id="L64">            }</span>
+        });
+
+<span class="fc" id="L67">    }</span>
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L70">        return eventList.size();</span>
+    }
+
+    public static class myEventsReviewViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout eventCard;
+        TextView eventTitle, eventDetails;
+
+
+        public myEventsReviewViewHolder(@NonNull View itemView) {
+<span class="fc" id="L79">            super(itemView);</span>
+<span class="fc" id="L80">            eventCard = itemView.findViewById(R.id.eventCard);</span>
+<span class="fc" id="L81">            eventTitle = itemView.findViewById(R.id.textEventTitle);</span>
+<span class="fc" id="L82">            eventDetails = itemView.findViewById(R.id.textEventDetails);</span>
+
+<span class="fc" id="L84">        }</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

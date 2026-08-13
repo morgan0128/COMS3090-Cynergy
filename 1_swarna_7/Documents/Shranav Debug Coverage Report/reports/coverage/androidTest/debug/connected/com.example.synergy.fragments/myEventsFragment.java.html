@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>myEventsFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">myEventsFragment.java</span></div><h1>myEventsFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.sheets.CreateEventSheet;
+import com.example.synergy.adapters.EventAdapter;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L35">public class myEventsFragment extends Fragment {</span>
+
+    RecyclerView recyclerView;
+    EventAdapter adapter;
+    Button createEventButton;
+    String userDetailString;
+
+<span class="fc" id="L42">    List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState){
+
+<span class="fc" id="L48">        View view = inflater.inflate(R.layout.fragment_my_events, container,false);</span>
+
+
+<span class="fc" id="L51">        handleArguments(getArguments());</span>
+<span class="fc" id="L52">        setupUI(view);</span>
+<span class="fc" id="L53">        setupAdapter();</span>
+        try {
+<span class="fc" id="L55">            JSONObject userDetailBody = new JSONObject(userDetailString);</span>
+<span class="fc" id="L56">            int userID = userDetailBody.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L57">            makeMyEventRequest(userID);</span>
+<span class="nc" id="L58">        } catch (JSONException e) {</span>
+<span class="nc" id="L59">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L60">        }</span>
+
+<span class="fc" id="L62">        handleListeners();</span>
+
+<span class="fc" id="L64">        return view;</span>
+    }
+
+    private void handleListeners(){
+<span class="fc" id="L68">        createEventButton.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L69">            CreateEventSheet sheet = CreateEventSheet.newInstance(userDetailString);</span>
+<span class="nc" id="L70">            sheet.show(getParentFragmentManager(), &quot;CreateEventSheet&quot;);</span>
+<span class="nc" id="L71">        });</span>
+<span class="fc" id="L72">    }</span>
+
+    private void setupAdapter(){
+        try {
+<span class="fc" id="L76">            adapter = new EventAdapter(requireContext(), eventList, null, true, userDetailString,</span>
+<span class="fc" id="L77">                    getParentFragmentManager());</span>
+<span class="nc" id="L78">        } catch (JSONException e) {</span>
+<span class="nc" id="L79">            throw new RuntimeException(e);</span>
+<span class="fc" id="L80">        }</span>
+
+<span class="fc" id="L82">        adapter.setOnEventDeletedListener(eventId -&gt; {</span>
+            // Remove from list
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (int i = 0; i &lt; eventList.size(); i++) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                if (eventList.get(i).getId() == eventId) {</span>
+<span class="nc" id="L86">                    eventList.remove(i);</span>
+<span class="nc" id="L87">                    break;</span>
+                }
+            }
+
+<span class="nc" id="L91">            adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L92">        });</span>
+<span class="fc" id="L93">        recyclerView.setAdapter(adapter);</span>
+<span class="fc" id="L94">    }</span>
+
+    private void handleArguments(Bundle args){
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (args != null) {</span>
+<span class="fc" id="L98">            userDetailString = args.getString(&quot;userDetails&quot;);</span>
+        }
+<span class="fc" id="L100">    }</span>
+
+    private void setupUI(View view){
+<span class="fc" id="L103">        recyclerView = view.findViewById(R.id.myRecyclerView);</span>
+<span class="fc" id="L104">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+<span class="fc" id="L105">        createEventButton = view.findViewById(R.id.createEvent);</span>
+
+<span class="fc" id="L107">    }</span>
+
+
+    private void populateEvents(JSONArray response) throws JSONException {
+
+<span class="fc" id="L112">        List&lt;EventItem&gt; newList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="fc" id="L115">            JSONObject obj = response.getJSONObject(i);</span>
+<span class="fc" id="L116">            newList.add(new EventItem(</span>
+<span class="fc" id="L117">                    obj.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L118">                    obj.getString(&quot;eventName&quot;),</span>
+<span class="fc" id="L119">                    obj.getString(&quot;eventTime&quot;),</span>
+<span class="fc" id="L120">                    obj.getString(&quot;eventLocation&quot;),</span>
+<span class="fc" id="L121">                    obj.getString(&quot;eventDate&quot;),</span>
+<span class="fc" id="L122">                    obj.getString(&quot;description&quot;)</span>
+            ));
+        }
+
+<span class="fc" id="L126">        DiffUtil.DiffResult diffResult = handleDifferentResults(newList);</span>
+
+<span class="fc" id="L128">        eventList.clear();</span>
+<span class="fc" id="L129">        eventList.addAll(newList);</span>
+<span class="fc" id="L130">        adapter.userEvents = response;</span>
+<span class="fc" id="L131">        diffResult.dispatchUpdatesTo(adapter);</span>
+
+<span class="fc" id="L133">    }</span>
+
+    private DiffUtil.DiffResult handleDifferentResults(List&lt;EventItem&gt; newList){
+        // Compute diff and update
+
+<span class="fc" id="L138">        return DiffUtil.calculateDiff(new DiffUtil.Callback() {</span>
+            @Override
+<span class="fc" id="L140">            public int getOldListSize() { return eventList.size(); }</span>
+            @Override
+<span class="fc" id="L142">            public int getNewListSize() { return newList.size(); }</span>
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                return eventList.get(oldItemPosition).getId() == newList.get(newItemPosition).getId();</span>
+            }
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+<span class="fc" id="L149">                EventItem oldItem = eventList.get(oldItemPosition);</span>
+<span class="fc" id="L150">                EventItem newItem = newList.get(newItemPosition);</span>
+<span class="fc" id="L151">                return oldItem.equals(newItem); // implement equals in EventItem</span>
+            }
+        });
+    }
+
+    private void makeMyEventRequest(int id) {
+<span class="fc" id="L157">        RequestQueue queue = Volley.newRequestQueue(requireContext());</span>
+
+
+<span class="fc" id="L160">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; +id;</span>
+
+<span class="fc" id="L162">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, server_url, null,</span>
+<span class="fc" id="L163">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        try {
+<span class="fc" id="L167">                            populateEvents(response);</span>
+<span class="nc" id="L168">                        } catch (JSONException e) {</span>
+<span class="nc" id="L169">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L170">                        }</span>
+
+<span class="fc" id="L172">                    }</span>
+<span class="fc" id="L173">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+<span class="nc" id="L177">            }</span>
+        });
+<span class="fc" id="L179">        queue.add(request);</span>
+<span class="fc" id="L180">    }</span>
+
+
+<span class="fc" id="L183">    private boolean eventsLoaded = false;</span>
+
+    @Override
+    public void onResume() {
+<span class="fc" id="L187">        super.onResume();</span>
+
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if (!eventsLoaded) {</span>
+            try {
+<span class="fc" id="L191">                JSONObject userDetailsBody = new JSONObject(userDetailString);</span>
+<span class="fc" id="L192">                int userID = userDetailsBody.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L193">                makeMyEventRequest(userID);</span>
+<span class="fc" id="L194">                eventsLoaded = true;</span>
+<span class="nc" id="L195">            } catch (JSONException e) {</span>
+<span class="nc" id="L196">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L197">            }</span>
+        }
+<span class="fc" id="L199">    }</span>
+
+    public void refreshEvents() {
+        try {
+<span class="nc" id="L203">            JSONObject userDetailsBody = new JSONObject(userDetailString);</span>
+<span class="nc" id="L204">            int userID = userDetailsBody.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L205">            makeMyEventRequest(userID);</span>
+<span class="nc" id="L206">        } catch (JSONException e) {</span>
+<span class="nc" id="L207">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L208">        }</span>
+<span class="nc" id="L209">    }</span>
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

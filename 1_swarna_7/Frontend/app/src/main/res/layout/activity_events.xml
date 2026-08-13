@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settings_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <!-- ViewPager goes first so it fills the top -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/backbuttonToHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="-10dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:background="@android:color/transparent"
+        android:drawableStart="@drawable/ic_back_arrow"
+        android:drawableTint="@color/black"
+        android:paddingLeft="30dp"
+        android:textColor="@color/white" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <!-- TabLayout now appears at the bottom -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabIndicatorColor="#FF0000"
+        app:tabSelectedTextColor="@color/black"
+        app:tabTextColor="@color/black" />
+
+</LinearLayout>

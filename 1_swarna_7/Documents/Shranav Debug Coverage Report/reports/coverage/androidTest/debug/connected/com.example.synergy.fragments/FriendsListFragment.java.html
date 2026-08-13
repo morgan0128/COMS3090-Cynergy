@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FriendsListFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">FriendsListFragment.java</span></div><h1>FriendsListFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SearchView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.Friend;
+import com.example.synergy.adapters.FriendAdapter;
+import com.example.synergy.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FriendsListFragment extends Fragment {
+
+    private String userDetailString;
+    private FriendAdapter adapter;
+    private List&lt;Friend&gt; friends;
+
+<span class="fc" id="L40">    public FriendsListFragment() {</span>
+        // Required empty public constructor
+<span class="fc" id="L42">    }</span>
+
+    /**
+     *  Clarifies what is required to create a new instance of this fragment
+     * @param userDetails : A string containing user details, that is received during
+     *                    login
+     * @return FriendsListFragment : Returns the Fragment that is to be opened
+     */
+    public static FriendsListFragment newInstance(String userDetails) {
+<span class="nc" id="L51">        FriendsListFragment fragment = new FriendsListFragment();</span>
+<span class="nc" id="L52">        Bundle args = new Bundle();</span>
+<span class="nc" id="L53">        args.putString(&quot;userDetails&quot;, userDetails);</span>
+<span class="nc" id="L54">        fragment.setArguments(args);</span>
+<span class="nc" id="L55">        return fragment;</span>
+    }
+
+    /**
+     *  Starts the fragment view with the layout file
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return inflated view from the layout file
+     */
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        // Inflate the fragment layout (create a layout file called fragment_friends_list.xml)
+<span class="fc" id="L77">        return inflater.inflate(R.layout.fragment_friends_list, container, false);</span>
+    }
+
+    /**
+     *  Provides functional;ity to components of the layout after the view is
+     *  created.
+     *
+     * @param view The View returned by {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     */
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+<span class="fc" id="L90">        super.onViewCreated(view, savedInstanceState);</span>
+
+        // Retrieve data passed to fragment
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="fc" id="L94">            userDetailString = getArguments().getString(&quot;userDetails&quot;);</span>
+        }
+
+        // Initialize views
+<span class="fc" id="L98">        RecyclerView recyclerView = view.findViewById(R.id.friends_rv);</span>
+<span class="fc" id="L99">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="fc" id="L101">        friends = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L102">        adapter = new FriendAdapter(requireContext(), friends, userDetailString);</span>
+<span class="fc" id="L103">        recyclerView.setAdapter(adapter);</span>
+
+
+<span class="fc" id="L106">        SearchView searchFriends = view.findViewById(R.id.searchUsers);</span>
+<span class="fc" id="L107">        searchFriends.setOnQueryTextListener(new SearchView.OnQueryTextListener(){</span>
+            /**
+             *  Updates the list of Friends when we submit a query and filters
+             *  users based on the query
+             *
+             * @param query the query text that is to be submitted
+             *
+             * @return true
+             */
+            @Override
+            public boolean onQueryTextSubmit(String query){
+<span class="nc" id="L118">                filterUsers(query);</span>
+<span class="nc" id="L119">                return true;</span>
+            }
+
+            /**
+             * Updates the list of Friends as we are writing a query so that
+             * the friend list is being filtered as we type in the search bar.
+             *
+             * @param newText the new content of the query text field.
+             *
+             * @return true
+             */
+            @Override
+            public boolean onQueryTextChange(String newText){
+<span class="nc" id="L132">                filterUsers(newText);</span>
+<span class="nc" id="L133">                return true;</span>
+            }
+        });
+
+
+        try {
+<span class="fc" id="L139">            fetchFriends();</span>
+<span class="nc" id="L140">        } catch (JSONException e) {</span>
+<span class="nc" id="L141">            throw new RuntimeException(e);</span>
+<span class="fc" id="L142">        }</span>
+
+
+<span class="fc" id="L145">    }</span>
+
+    /**
+     * Based on a query text we filter the list of Friends so that it only
+     * shows users with the matching name
+     * shows users with the matching name
+     *
+     * @param text : A queried text we get when we type into the search bar
+     */
+    private void filterUsers(String text){
+<span class="nc" id="L155">        List&lt;Friend&gt; filteredList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        for (Friend user: friends){</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (user.getName().toLowerCase().contains(text.toLowerCase())){</span>
+<span class="nc" id="L158">                filteredList.add(user);</span>
+            }
+<span class="nc" id="L160">        }</span>
+<span class="nc" id="L161">        adapter.updateList(filteredList);</span>
+<span class="nc" id="L162">    }</span>
+
+    /**
+     * When the fragment is resumed
+     */
+    @Override
+    public void onResume() {
+<span class="nc" id="L169">        super.onResume();</span>
+        try {
+<span class="nc" id="L171">            fetchFriends();</span>
+<span class="nc" id="L172">        } catch (JSONException e) {</span>
+<span class="nc" id="L173">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L174">        }</span>
+<span class="nc" id="L175">    }</span>
+
+    /**
+     *  Makes a request to fetch the friends of the user
+     *  The server returns  a JSONArray which we will parse into and
+     *  extract a JSONObject, which we will add onto a friends list, which is
+     *  passed to the adapter to populate the List
+     *
+     * @throws JSONException: Failure to parse JSON
+     */
+    private void fetchFriends() throws JSONException {
+<span class="fc" id="L186">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="fc" id="L187">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L188">        String server_url =&quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/&quot; + userId;</span>
+
+
+<span class="fc" id="L191">        @SuppressLint(&quot;NotifyDataSetChanged&quot;) JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+                this::handlingFriendsSuccess,
+                error -&gt; {
+<span class="nc" id="L197">                    Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L198">                    Toast.makeText(requireContext(), &quot;Failed to load friends&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L199">                }</span>
+        );
+
+<span class="fc" id="L202">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+
+<span class="fc" id="L204">    }</span>
+
+    private void handlingFriendsSuccess(JSONArray response){
+<span class="fc" id="L207">        friends.clear();</span>
+        // response is a JsonArray so we loop through this
+        // array to get the Friend JsonObject
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+            try {
+
+<span class="fc" id="L213">                JSONObject object = response.getJSONObject(i);</span>
+                JSONObject friendObject;
+<span class="fc" id="L215">                friendObject = object.getJSONObject(&quot;friend&quot;);</span>
+
+<span class="fc" id="L217">                friends.add(new Friend(friendObject));</span>
+<span class="nc" id="L218">            } catch (JSONException e) {</span>
+<span class="nc" id="L219">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L220">            }</span>
+        }
+<span class="fc" id="L222">        adapter.notifyDataSetChanged();</span>
+<span class="fc" id="L223">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

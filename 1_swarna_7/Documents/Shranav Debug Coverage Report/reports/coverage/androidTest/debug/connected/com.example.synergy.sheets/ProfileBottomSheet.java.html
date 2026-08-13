@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProfileBottomSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">ProfileBottomSheet.java</span></div><h1>ProfileBottomSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L34">public class ProfileBottomSheet extends BottomSheetDialogFragment {</span>
+
+    private EditText name;
+    private EditText age;
+    private EditText bio;
+    private Spinner gender;
+    private Button createProfileBtn;
+
+    private EditText interestInput;
+    private ChipGroup interestsGroup;
+<span class="nc" id="L44">    private final ArrayList&lt;String&gt; interests = new ArrayList&lt;&gt;();</span>
+
+    private static final String POST_URL =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/profile/create/&quot;;
+
+    private int userId;
+
+    public static ProfileBottomSheet newInstance(int userId) {
+<span class="nc" id="L52">        ProfileBottomSheet fragment = new ProfileBottomSheet();</span>
+<span class="nc" id="L53">        Bundle args = new Bundle();</span>
+<span class="nc" id="L54">        args.putInt(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L55">        fragment.setArguments(args);</span>
+<span class="nc" id="L56">        return fragment;</span>
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L61">        super.onCreate(savedInstanceState);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="nc" id="L63">            userId = getArguments().getInt(&quot;userId&quot;, -1);</span>
+        }
+<span class="nc" id="L65">    }</span>
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+<span class="nc" id="L72">        View root = inflater.inflate(R.layout.bottom_sheet_profile, container, false);</span>
+
+<span class="nc" id="L74">        name = root.findViewById(R.id.createPName);</span>
+<span class="nc" id="L75">        age = root.findViewById(R.id.createPAge);</span>
+<span class="nc" id="L76">        bio = root.findViewById(R.id.createPBio);</span>
+<span class="nc" id="L77">        gender = root.findViewById(R.id.createPGender);</span>
+<span class="nc" id="L78">        createProfileBtn = root.findViewById(R.id.createProfileButton);</span>
+
+<span class="nc" id="L80">        interestInput = root.findViewById(R.id.createPInterestInput);</span>
+<span class="nc" id="L81">        interestsGroup = root.findViewById(R.id.createPInterestsGroup);</span>
+
+<span class="nc" id="L83">        ArrayAdapter&lt;CharSequence&gt; adapter = ArrayAdapter.createFromResource(</span>
+<span class="nc" id="L84">                requireContext(),</span>
+                R.array.gender_options,
+                android.R.layout.simple_spinner_item
+        );
+<span class="nc" id="L88">        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L89">        gender.setAdapter(adapter);</span>
+
+<span class="nc" id="L91">        interestInput.setOnEditorActionListener((v, actionId, event) -&gt; {</span>
+<span class="nc bnc" id="L92" title="All 4 branches missed.">            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {</span>
+<span class="nc" id="L93">                addInterestFromInput();</span>
+<span class="nc" id="L94">                return true;</span>
+            }
+<span class="nc" id="L96">            return false;</span>
+        });
+
+<span class="nc" id="L99">        createProfileBtn.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L100">                makeServerReq(</span>
+<span class="nc" id="L101">                        name.getText().toString(),</span>
+<span class="nc" id="L102">                        age.getText().toString(),</span>
+<span class="nc" id="L103">                        bio.getText().toString(),</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                        gender.getSelectedItem() != null</span>
+<span class="nc" id="L105">                                ? gender.getSelectedItem().toString()</span>
+<span class="nc" id="L106">                                : &quot;&quot;</span>
+                )
+        );
+
+<span class="nc" id="L110">        return root;</span>
+    }
+
+    private void addInterestFromInput() {
+<span class="nc" id="L114">        String text = interestInput.getText().toString().trim();</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (text.isEmpty()) return;</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (interests.contains(text)) {</span>
+<span class="nc" id="L117">            interestInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L118">            return;</span>
+        }
+<span class="nc" id="L120">        interests.add(text);</span>
+<span class="nc" id="L121">        addChipForInterest(text);</span>
+<span class="nc" id="L122">        interestInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L123">    }</span>
+
+    private void addChipForInterest(String interest) {
+<span class="nc" id="L126">        Chip chip = new Chip(requireContext());</span>
+<span class="nc" id="L127">        chip.setText(interest);</span>
+<span class="nc" id="L128">        chip.setCloseIconVisible(true);</span>
+<span class="nc" id="L129">        chip.setOnCloseIconClickListener(v -&gt; {</span>
+<span class="nc" id="L130">            interestsGroup.removeView(chip);</span>
+<span class="nc" id="L131">            interests.remove(interest);</span>
+<span class="nc" id="L132">        });</span>
+<span class="nc" id="L133">        interestsGroup.addView(chip);</span>
+<span class="nc" id="L134">    }</span>
+
+    private void makeServerReq(String nameStr, String ageStr, String bioStr, String genderStr) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (userId &lt;= 0) {</span>
+<span class="nc" id="L138">            showStatusDialog(&quot;Error&quot;, &quot;Invalid user ID.&quot;, false);</span>
+<span class="nc" id="L139">            return;</span>
+        }
+
+<span class="nc bnc" id="L142" title="All 8 branches missed.">        if (nameStr.isEmpty() || ageStr.isEmpty() || bioStr.isEmpty() || genderStr.isEmpty()) {</span>
+<span class="nc" id="L143">            showStatusDialog(&quot;Error&quot;, &quot;All fields are required.&quot;, false);</span>
+<span class="nc" id="L144">            return;</span>
+        }
+
+        int ageVal;
+        try {
+<span class="nc" id="L149">            ageVal = Integer.parseInt(ageStr);</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (ageVal &lt;= 0) {</span>
+<span class="nc" id="L151">                showStatusDialog(&quot;Error&quot;, &quot;Please enter a valid age.&quot;, false);</span>
+<span class="nc" id="L152">                return;</span>
+            }
+<span class="nc" id="L154">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L155">            showStatusDialog(&quot;Error&quot;, &quot;Age must be a number.&quot;, false);</span>
+<span class="nc" id="L156">            return;</span>
+<span class="nc" id="L157">        }</span>
+
+        try {
+<span class="nc" id="L160">            JSONObject signupData = new JSONObject();</span>
+<span class="nc" id="L161">            signupData.put(&quot;profileName&quot;, nameStr);</span>
+<span class="nc" id="L162">            signupData.put(&quot;age&quot;, ageVal);</span>
+<span class="nc" id="L163">            signupData.put(&quot;profileBio&quot;, bioStr);</span>
+<span class="nc" id="L164">            signupData.put(&quot;gender&quot;, genderStr);</span>
+<span class="nc" id="L165">            signupData.put(&quot;interests&quot;, new JSONArray(interests));</span>
+
+<span class="nc" id="L167">            String completeUrl = POST_URL + userId;</span>
+
+<span class="nc" id="L169">            JsonObjectRequest jsonRequest = new JsonObjectRequest(</span>
+                    Request.Method.POST,
+                    completeUrl,
+                    signupData,
+                    response -&gt; {
+<span class="nc" id="L174">                        Log.d(&quot;ProfileBottomSheet&quot;, &quot;Create profile: &quot; + response);</span>
+<span class="nc" id="L175">                        showStatusDialog(&quot;Success&quot;, &quot;Profile creation successful!&quot;, true);</span>
+<span class="nc" id="L176">                        clearForm();</span>
+<span class="nc" id="L177">                    },</span>
+                    error -&gt; {
+<span class="nc" id="L179">                        Log.e(&quot;ProfileBottomSheet&quot;, &quot;Create error: &quot; + error);</span>
+<span class="nc" id="L180">                        showStatusDialog(&quot;Error&quot;, &quot;Profile creation failed. Please try again.&quot;, false);</span>
+<span class="nc" id="L181">                        clearForm();</span>
+<span class="nc" id="L182">                    }</span>
+<span class="nc" id="L183">            ) {</span>
+                @Override
+                public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L186">                    Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L187">                    headers.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L188">                    return headers;</span>
+                }
+            };
+
+<span class="nc" id="L192">            VolleySingleton.getInstance(requireContext()).addToRequestQueue(jsonRequest);</span>
+
+<span class="nc" id="L194">        } catch (JSONException e) {</span>
+<span class="nc" id="L195">            e.printStackTrace();</span>
+<span class="nc" id="L196">            showStatusDialog(&quot;Error&quot;, &quot;Failed to create request.&quot;, false);</span>
+<span class="nc" id="L197">            clearForm();</span>
+<span class="nc" id="L198">        }</span>
+<span class="nc" id="L199">    }</span>
+
+    private void showStatusDialog(String title, String message, boolean dismissOnOk) {
+<span class="nc" id="L202">        new AlertDialog.Builder(requireContext())</span>
+<span class="nc" id="L203">                .setTitle(title)</span>
+<span class="nc" id="L204">                .setMessage(message)</span>
+<span class="nc" id="L205">                .setCancelable(false)</span>
+<span class="nc" id="L206">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L207">                    dialog.dismiss();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                    if (dismissOnOk) dismiss();</span>
+<span class="nc" id="L209">                })</span>
+<span class="nc" id="L210">                .show();</span>
+<span class="nc" id="L211">    }</span>
+
+    private void clearForm() {
+<span class="nc" id="L214">        name.setText(&quot;&quot;);</span>
+<span class="nc" id="L215">        age.setText(&quot;&quot;);</span>
+<span class="nc" id="L216">        bio.setText(&quot;&quot;);</span>
+<span class="nc" id="L217">        gender.setSelection(0);</span>
+
+<span class="nc" id="L219">        interests.clear();</span>
+<span class="nc" id="L220">        interestsGroup.removeAllViews();</span>
+<span class="nc" id="L221">        interestInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L222">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

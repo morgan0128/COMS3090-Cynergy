@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/editProfileTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Profile"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/editPName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Name"
+            android:inputType="textPersonName"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/editPAge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Age"
+            android:inputType="number"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/editPBio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Bio"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/editPGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Interests input -->
+        <EditText
+            android:id="@+id/editPInterestInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Add an interest and press enter"
+            android:imeOptions="actionDone"
+            android:inputType="text"
+            android:padding="8dp"
+            android:layout_marginTop="12dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/editPInterestsGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:padding="4dp"
+            app:singleLine="false"
+            app:singleSelection="false"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp" />
+
+        <Button
+            android:id="@+id/editProfileButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Changes"
+            android:textAllCaps="false"
+            android:backgroundTint="#2196F3"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="16dp"
+            android:paddingVertical="10dp" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotifAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">NotifAdapter.java</span></div><h1>NotifAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.content.Context;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.NotificationItem;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
+
+public class NotifAdapter extends RecyclerView.Adapter&lt;NotifAdapter.ViewHolder&gt;{
+
+
+    private List&lt;NotificationItem&gt; notifications;
+    private String userDetailString;
+    private final Context context;
+
+
+<span class="fc" id="L39">    public NotifAdapter(Context context, List&lt;NotificationItem&gt; notifications, String userDetailString){</span>
+<span class="fc" id="L40">        this.notifications = notifications;</span>
+<span class="fc" id="L41">        this.userDetailString = userDetailString;</span>
+<span class="fc" id="L42">        this.context = context;</span>
+<span class="fc" id="L43">    }</span>
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="fc" id="L48">        View view = LayoutInflater.from(parent.getContext())</span>
+<span class="fc" id="L49">                .inflate(R.layout.item_notification, parent, false);</span>
+<span class="fc" id="L50">        return new ViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+<span class="fc" id="L55">        NotificationItem item = notifications.get(position);</span>
+<span class="fc" id="L56">        holder.title.setText(item.getTitle());</span>
+<span class="fc" id="L57">        holder.message.setText(item.getMessage());</span>
+<span class="fc" id="L58">        holder.time.setText(item.getStatus());</span>
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (&quot;READ&quot;.equals(item.getStatus())) {</span>
+<span class="nc" id="L61">            holder.itemView.setAlpha(0.5f);</span>
+<span class="nc" id="L62">            holder.title.setTextColor(context.getResources().getColor(android.R.color.darker_gray));</span>
+<span class="nc" id="L63">            holder.message.setTextColor(context.getResources().getColor(android.R.color.darker_gray));</span>
+        } else {
+<span class="fc" id="L65">            holder.itemView.setAlpha(1.0f);</span>
+        }
+
+<span class="fc" id="L68">        int noti_id = item.getNotiId();</span>
+
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (&quot;CLEARED&quot;.equals(item.getStatus())) {</span>
+<span class="fc" id="L71">            holder.itemView.setVisibility(View.GONE);</span>
+        }
+
+<span class="fc" id="L74">        holder.itemView.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (item.getMessage().contains(&quot;invited&quot;)){</span>
+<span class="nc" id="L76">                showInviteDecisionDialog(</span>
+                );
+            } else {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (!&quot;READ&quot;.equals(item.getStatus())) { // Only mark if unread</span>
+                    try {
+<span class="nc" id="L81">                        readNotification(noti_id, position);</span>
+<span class="nc" id="L82">                    } catch (JSONException e) {</span>
+<span class="nc" id="L83">                        throw new RuntimeException(e);</span>
+<span class="nc" id="L84">                    }</span>
+                }
+            }
+
+
+<span class="nc" id="L89">        });</span>
+<span class="fc" id="L90">    }</span>
+
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L94">        return notifications.size();</span>
+    }
+
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView title, message, time;
+
+        public ViewHolder(@NonNull View itemView){
+<span class="fc" id="L102">            super(itemView);</span>
+<span class="fc" id="L103">            title = itemView.findViewById(R.id.notification_title);</span>
+<span class="fc" id="L104">            message = itemView.findViewById(R.id.notification_message);</span>
+<span class="fc" id="L105">            time = itemView.findViewById(R.id.notification_time);</span>
+<span class="fc" id="L106">        }</span>
+
+
+    }
+
+    private void readNotification(int noti_id, int position) throws JSONException {
+<span class="nc" id="L112">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/notifications/&quot; + noti_id + &quot;/read&quot;;</span>
+
+<span class="nc" id="L114">        StringRequest arrayRequest = new StringRequest(</span>
+                Request.Method.PUT,
+                url,
+                response -&gt; {
+
+<span class="nc" id="L119">                    notifications.get(position).setStatus(&quot;READ&quot;);</span>
+<span class="nc" id="L120">                    notifyItemChanged(position);</span>
+
+                    /**
+                     * TODO: Implement Response change
+                     * the notification, which would include either friend info
+                     * or event info which should take me to
+                     * friend chat or event info page
+                     */
+<span class="nc" id="L128">                },</span>
+                error -&gt; {
+<span class="nc" id="L130">                    Toast.makeText(context, &quot;Volley Error: &quot; + error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L131">                }</span>
+        );
+
+
+<span class="nc" id="L135">        RequestQueue queue = Volley.newRequestQueue(context);</span>
+<span class="nc" id="L136">        queue.add(arrayRequest);</span>
+
+<span class="nc" id="L138">    }</span>
+
+    private void showInviteDecisionDialog(
+            ) {
+<span class="nc" id="L142">        new AlertDialog.Builder(context)</span>
+<span class="nc" id="L143">                .setTitle(&quot;Event Invitation&quot;)</span>
+<span class="nc" id="L144">                .setMessage(&quot;You were sent an Event Invite!&quot;)</span>
+<span class="nc" id="L145">                .setPositiveButton(&quot;Accept&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L146">                    int inviteId = 0;</span>
+//                    eventInviteAccept(inviteId);
+<span class="nc" id="L148">                    Toast.makeText(context, &quot;Accepted Invite&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L149">                })</span>
+
+<span class="nc" id="L151">                .setNegativeButton(&quot;Reject&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L152">                    int eventId = 0;</span>
+<span class="nc" id="L153">                    Toast.makeText(context, &quot;Rejected Invite&quot;, Toast.LENGTH_SHORT).show();</span>
+//                    try {
+//                        eventInviteReject(eventId);
+//
+//                    } catch (JSONException e) {
+//                        throw new RuntimeException(e);
+//                    }
+<span class="nc" id="L160">                })</span>
+<span class="nc" id="L161">                .show();</span>
+<span class="nc" id="L162">    }</span>
+
+    private void eventInviteAccept(int inviteId){
+<span class="nc" id="L165">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/invite/&quot; + inviteId + &quot;/accept&quot;;</span>
+
+<span class="nc" id="L167">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                url,
+                null,
+<span class="nc" id="L171">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject response) {
+<span class="nc" id="L174">                        Toast.makeText(context, &quot;Invite Accepted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L175">                    }</span>
+                },
+<span class="nc" id="L177">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L180">                        Log.d(&quot;VOLLEY ERROR&quot;, error.toString());</span>
+<span class="nc" id="L181">                    }</span>
+                }
+        );
+<span class="nc" id="L184">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L185">    }</span>
+
+    private void eventInviteReject(int eventId) throws JSONException {
+<span class="nc" id="L188">        JSONObject userDetailObject = new JSONObject(userDetailString);</span>
+<span class="nc" id="L189">        int receiverId = userDetailObject.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L190">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/invite/&quot; + eventId + &quot;/decline/&quot; + receiverId;</span>
+
+<span class="nc" id="L192">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                url,
+                null,
+<span class="nc" id="L196">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject response) {
+<span class="nc" id="L199">                        Toast.makeText(context, &quot;Invite rejected&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L200">                    }</span>
+                },
+<span class="nc" id="L202">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L205">                        Log.d(&quot;VOLLEY ERROR&quot;, error.toString());</span>
+<span class="nc" id="L206">                    }</span>
+                }
+        );
+<span class="nc" id="L209">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L210">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventNodeAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">EventNodeAdapter.java</span></div><h1>EventNodeAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.sheets.EditEventSheet;
+import com.example.synergy.activities.EventAttendanceActivity;
+import com.example.synergy.fragments.EventInfoFragment;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class EventNodeAdapter extends RecyclerView.Adapter&lt;EventNodeAdapter.EventViewHolder&gt; {
+
+    private final FragmentManager fragmentManager;
+    private final Context context;
+    private final List&lt;EventItem&gt; eventList;
+    private final int userId;
+    private final String emailId;
+
+    private List&lt;EventItem&gt; fullList;
+
+    private final boolean showDelete;
+    private final String userDetailString;
+
+    private boolean showAttendees;
+    public JSONArray userEvents;
+
+
+//    Constructor for when default value of showAttendees is false
+    public  EventNodeAdapter(Context context, List&lt;EventItem&gt; eventList, JSONArray userEvents, boolean showDelete,
+                         String userDetailString, FragmentManager fragmentManager) throws JSONException {
+<span class="nc" id="L59">        this(context, eventList, userEvents, showDelete, userDetailString, fragmentManager, false);</span>
+
+<span class="nc" id="L61">    }</span>
+
+    public EventNodeAdapter(Context context, List&lt;EventItem&gt; eventList, JSONArray userEvents, boolean showDelete,
+<span class="nc" id="L64">                        String userDetailString, FragmentManager fragmentManager, boolean showAttendees) throws JSONException {</span>
+<span class="nc" id="L65">        this.context = context;</span>
+<span class="nc" id="L66">        this.eventList = eventList;</span>
+<span class="nc" id="L67">        this.fullList = new ArrayList&lt;&gt;(eventList);</span>
+<span class="nc" id="L68">        this.showDelete = showDelete;</span>
+<span class="nc" id="L69">        this.userEvents = userEvents;</span>
+<span class="nc" id="L70">        this.userDetailString = userDetailString;</span>
+<span class="nc" id="L71">        this.fragmentManager = fragmentManager;</span>
+<span class="nc" id="L72">        this.showAttendees = showAttendees;</span>
+<span class="nc" id="L73">        JSONObject userDetailsTemp = new JSONObject(userDetailString);</span>
+<span class="nc" id="L74">        userId = userDetailsTemp.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L75">        emailId = userDetailsTemp.getString(&quot;emailId&quot;);</span>
+
+<span class="nc" id="L77">    }</span>
+    @NonNull
+    @Override
+    public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="nc" id="L81">        View view = LayoutInflater.from(context).inflate(R.layout.item_button, parent, false);</span>
+<span class="nc" id="L82">        return new EventViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+<span class="nc" id="L87">        EventItem item = eventList.get(position);</span>
+<span class="nc" id="L88">        Set&lt;Integer&gt; userEventIds = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L89">        boolean isMyEvents = false;</span>
+
+<span class="nc" id="L91">        setupUI(holder, item);</span>
+<span class="nc" id="L92">        collectUserEvents(userEventIds);</span>
+
+        // Then in onBindViewHolder:
+<span class="nc" id="L95">        isMyEvents = userEventIds.contains(item.getId());</span>
+<span class="nc" id="L96">        handleIfMyEventOrNot(isMyEvents, item, holder);</span>
+
+<span class="nc" id="L98">    }</span>
+
+    @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+    public void filter(String text) {
+<span class="nc" id="L102">        eventList.clear();</span>
+
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (text == null || text.trim().isEmpty()) {</span>
+<span class="nc" id="L105">            eventList.addAll(fullList);</span>
+        } else {
+<span class="nc" id="L107">            String query = text.toLowerCase().trim();</span>
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            for (EventItem item : fullList) {</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                if (item.getEventName().toLowerCase().contains(query) ||</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                        item.getEventLocation().toLowerCase().contains(query) ||</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                        item.getEventDate().toLowerCase().contains(query)) {</span>
+
+<span class="nc" id="L114">                    eventList.add(item);</span>
+                }
+<span class="nc" id="L116">            }</span>
+        }
+
+<span class="nc" id="L119">        notifyDataSetChanged();</span>
+<span class="nc" id="L120">    }</span>
+
+    public void updateFullList(List&lt;EventItem&gt; newFullList) {
+<span class="nc" id="L123">        fullList.clear();</span>
+<span class="nc" id="L124">        fullList.addAll(newFullList);</span>
+<span class="nc" id="L125">        Log.d(&quot;LIST&quot;, newFullList.get(0).getEventName().toString());</span>
+<span class="nc" id="L126">    }</span>
+
+
+    private void collectUserEvents(Set&lt;Integer&gt; userEventIds){
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (userEvents != null) {</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            for (int i = 0; i &lt; userEvents.length(); i++) {</span>
+                try {
+<span class="nc" id="L133">                    JSONObject event = userEvents.getJSONObject(i);</span>
+<span class="nc" id="L134">                    userEventIds.add(event.getInt(&quot;id&quot;));</span>
+<span class="nc" id="L135">                } catch (JSONException e) {</span>
+<span class="nc" id="L136">                    Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L137">                }</span>
+            }
+        }
+<span class="nc" id="L140">    }</span>
+    private void setupUI(EventViewHolder holder, EventItem item){
+<span class="nc" id="L142">        holder.eventTitle.setText(item.getEventName());</span>
+<span class="nc" id="L143">        holder.eventDetails.setText(item.getEventTime() + &quot; | &quot;+ item.getEventDate() + &quot; | &quot; +</span>
+<span class="nc" id="L144">                item.getEventLocation());</span>
+
+<span class="nc" id="L146">    }</span>
+
+    private void handleIfMyEventOrNot(Boolean isMyEvents, EventItem item, EventViewHolder holder){
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        if (isMyEvents &amp;&amp; showDelete) {</span>
+<span class="nc" id="L150">            myEventFunctionality(item, holder);</span>
+<span class="nc" id="L151">            holder.eventCard.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L152">                startEditEventSheet(item);</span>
+<span class="nc" id="L153">            });</span>
+
+        } else {
+
+<span class="nc" id="L157">            holder.deleteButton.setVisibility(View.GONE);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (showAttendees){</span>
+<span class="nc" id="L159">                holder.attendees.setVisibility(View.VISIBLE);</span>
+            } else {
+<span class="nc" id="L161">                holder.attendees.setVisibility(View.GONE);</span>
+            }
+
+<span class="nc" id="L164">            holder.attendees.setOnClickListener(v -&gt;{</span>
+<span class="nc" id="L165">                Intent intent = new Intent(context, EventAttendanceActivity.class);</span>
+<span class="nc" id="L166">                intent.putExtra(&quot;event_id&quot;, item.getId());</span>
+<span class="nc" id="L167">                intent.putExtra(&quot;user_id&quot;, userId);</span>
+<span class="nc" id="L168">                intent.putExtra(&quot;event_name&quot;, item.getEventName());</span>
+<span class="nc" id="L169">                intent.putExtra(&quot;emailId&quot;, emailId);</span>
+<span class="nc" id="L170">                context.startActivity(intent);</span>
+<span class="nc" id="L171">            });</span>
+
+<span class="nc" id="L173">            holder.eventCard.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L174">                startEventInfoFragment(item);</span>
+<span class="nc" id="L175">            });</span>
+        }
+<span class="nc" id="L177">    }</span>
+
+    private void myEventFunctionality(EventItem item, EventViewHolder holder){
+<span class="nc" id="L180">        holder.deleteButton.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L181">        holder.attendees.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L183">        holder.deleteButton.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L184">                makeDeleteRequest(item.getId(), userId, holder.deleteButton)</span>
+        );
+
+<span class="nc" id="L187">        holder.attendees.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L188">            Intent intent = new Intent(context, EventAttendanceActivity.class);</span>
+<span class="nc" id="L189">            intent.putExtra(&quot;event_id&quot;, item.getId());</span>
+<span class="nc" id="L190">            intent.putExtra(&quot;user_id&quot;, userId);</span>
+<span class="nc" id="L191">            intent.putExtra(&quot;event_name&quot;, item.getEventName());</span>
+<span class="nc" id="L192">            intent.putExtra(&quot;emailId&quot;, emailId);</span>
+<span class="nc" id="L193">            context.startActivity(intent);</span>
+<span class="nc" id="L194">        });</span>
+<span class="nc" id="L195">    }</span>
+    private void startEditEventSheet(EventItem item){
+        // Only create JSON for editing
+<span class="nc" id="L198">        JSONObject eventDetails = new JSONObject();</span>
+        try {
+<span class="nc" id="L200">            eventDetails.put(&quot;id&quot;, item.getId());</span>
+<span class="nc" id="L201">            eventDetails.put(&quot;eventName&quot;, item.getEventName());</span>
+<span class="nc" id="L202">            eventDetails.put(&quot;eventLocation&quot;, item.getEventLocation());</span>
+<span class="nc" id="L203">            eventDetails.put(&quot;eventDate&quot;, item.getEventDate());</span>
+<span class="nc" id="L204">            eventDetails.put(&quot;eventTime&quot;, item.getEventTime());</span>
+<span class="nc" id="L205">            eventDetails.put(&quot;description&quot;, item.getDescription());</span>
+<span class="nc" id="L206">        } catch (JSONException e) {</span>
+<span class="nc" id="L207">            Log.d(&quot;JSON ERROR&quot;, e.toString());</span>
+<span class="nc" id="L208">        }</span>
+<span class="nc" id="L209">        EditEventSheet sheet = EditEventSheet.newInstance(userDetailString, eventDetails.toString());</span>
+<span class="nc" id="L210">        sheet.show(fragmentManager, &quot;EditEventSheet&quot;);</span>
+<span class="nc" id="L211">    }</span>
+
+    private void startEventInfoFragment(EventItem item){
+<span class="nc" id="L214">        EventInfoFragment fragment = new EventInfoFragment();</span>
+<span class="nc" id="L215">        Bundle bundle = new Bundle();</span>
+<span class="nc" id="L216">        bundle.putInt(&quot;eventId&quot;, item.getId());</span>
+<span class="nc" id="L217">        bundle.putInt(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L218">        bundle.putString(&quot;userDetails&quot;, userDetailString);</span>
+<span class="nc" id="L219">        bundle.putString(&quot;eventName&quot;, item.getEventName());</span>
+<span class="nc" id="L220">        bundle.putString(&quot;eventDate&quot;, item.getEventDate());</span>
+<span class="nc" id="L221">        bundle.putString(&quot;eventTime&quot;, item.getEventTime());</span>
+<span class="nc" id="L222">        bundle.putString(&quot;eventLocation&quot;, item.getEventLocation());</span>
+<span class="nc" id="L223">        fragment.setArguments(bundle);</span>
+
+<span class="nc" id="L225">        fragmentManager.beginTransaction()</span>
+<span class="nc" id="L226">                .replace(R.id.settings_root, fragment)</span>
+<span class="nc" id="L227">                .addToBackStack(null)</span>
+<span class="nc" id="L228">                .commit();</span>
+<span class="nc" id="L229">    }</span>
+
+    private void makeDeleteRequest(int eventId, int userId, Button deleteButton){
+<span class="nc" id="L232">        deleteButton.setEnabled(false);</span>
+<span class="nc" id="L233">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/&quot; + eventId +</span>
+                &quot;?userId=&quot; + userId;
+<span class="nc" id="L235">        StringRequest request = new StringRequest(</span>
+                Request.Method.DELETE,
+                server_url,
+<span class="nc" id="L238">                new Response.Listener&lt;String&gt;() {</span>
+                    @Override
+                    public void onResponse(String s) {
+<span class="nc" id="L241">                        showStatusDialog();</span>
+
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                        if (deleteListener != null) {</span>
+<span class="nc" id="L244">                            deleteListener.onEventDeleted(eventId);</span>
+                        }
+<span class="nc" id="L246">                    }</span>
+<span class="nc" id="L247">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L250">                deleteButton.setEnabled(true);</span>
+<span class="nc" id="L251">            }</span>
+        }
+
+        );
+
+<span class="nc" id="L256">        VolleySingleton.getInstance(this.context).addToRequestQueue(request);</span>
+<span class="nc" id="L257">    }</span>
+
+
+    private void showStatusDialog() {
+<span class="nc" id="L261">        new androidx.appcompat.app.AlertDialog.Builder(context)</span>
+<span class="nc" id="L262">                .setTitle(&quot;Success&quot;)</span>
+<span class="nc" id="L263">                .setMessage(&quot;Object Deleted&quot;)</span>
+<span class="nc" id="L264">                .setCancelable(false)</span>
+<span class="nc" id="L265">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L266">                .show();</span>
+<span class="nc" id="L267">    }</span>
+
+    @Override
+    public int getItemCount() {
+<span class="nc" id="L271">        return eventList.size();</span>
+    }
+
+    public static class EventViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout eventCard;
+        TextView eventTitle, eventDetails;
+        Button deleteButton;
+        Button attendees;
+
+        public EventViewHolder(@NonNull View itemView) {
+<span class="nc" id="L281">            super(itemView);</span>
+<span class="nc" id="L282">            eventCard = itemView.findViewById(R.id.eventCard);</span>
+<span class="nc" id="L283">            eventTitle = itemView.findViewById(R.id.textEventTitle);</span>
+<span class="nc" id="L284">            eventDetails = itemView.findViewById(R.id.textEventDetails);</span>
+<span class="nc" id="L285">            deleteButton = itemView.findViewById(R.id.deleteEventButton);</span>
+<span class="nc" id="L286">            attendees = itemView.findViewById(R.id.showAttendeesButton);</span>
+<span class="nc" id="L287">        }</span>
+    }
+
+
+    //    Delete Event Listener to implement live updates
+    public interface OnEventDeletedListener {
+        void onEventDeleted(int eventId);
+    }
+
+    private OnEventDeletedListener deleteListener;
+
+    public void setOnEventDeletedListener(OnEventDeletedListener listener) {
+<span class="nc" id="L299">        this.deleteListener = listener;</span>
+<span class="nc" id="L300">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

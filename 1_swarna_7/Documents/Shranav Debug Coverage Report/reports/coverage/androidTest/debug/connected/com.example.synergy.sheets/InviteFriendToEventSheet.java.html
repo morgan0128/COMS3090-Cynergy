@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InviteFriendToEventSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">InviteFriendToEventSheet.java</span></div><h1>InviteFriendToEventSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.os.Bundle;
+
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.EventAdapter;
+import com.example.synergy.adapters.eventInvitesAdapter;
+import com.example.synergy.items.EventItem;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A simple {@link Fragment} subclass.
+ * Use the {@link InviteFriendToEventSheet#newInstance} factory method to
+ * create an instance of this fragment.
+ */
+public class InviteFriendToEventSheet extends BottomSheetDialogFragment {
+
+    private RecyclerView event_invites_rv;
+
+    private eventInvitesAdapter adapter;
+    private int friendId;
+<span class="nc" id="L46">    private final List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+    private String userDetailString;
+    private static final String ARG_USER_DETAILS = &quot;userDetails&quot;;
+    private static final String ARG_FRIEND_ID = &quot;friendId&quot;;
+
+
+<span class="nc" id="L52">    public InviteFriendToEventSheet() {</span>
+        // Required empty public constructor
+<span class="nc" id="L54">    }</span>
+
+
+    public static InviteFriendToEventSheet newInstance(String userDetails, int friendId) {
+<span class="nc" id="L58">        InviteFriendToEventSheet fragment = new InviteFriendToEventSheet();</span>
+<span class="nc" id="L59">        Bundle args = new Bundle();</span>
+<span class="nc" id="L60">        args.putString(ARG_USER_DETAILS, userDetails);</span>
+<span class="nc" id="L61">        args.putInt(ARG_FRIEND_ID, friendId);</span>
+
+<span class="nc" id="L63">        fragment.setArguments(args);</span>
+<span class="nc" id="L64">        return fragment;</span>
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L69">        super.onCreate(savedInstanceState);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="nc" id="L71">            userDetailString = getArguments().getString(ARG_USER_DETAILS);</span>
+<span class="nc" id="L72">            friendId = getArguments().getInt(ARG_FRIEND_ID);</span>
+        }
+
+
+<span class="nc" id="L76">    }</span>
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+<span class="nc" id="L81">        View view = inflater.inflate(R.layout.fragment_invite_friend_to_event_sheet, container, false);</span>
+        // Inflate the layout for this fragment
+
+<span class="nc" id="L84">        event_invites_rv = view.findViewById(R.id.eventInviteRv);</span>
+<span class="nc" id="L85">        event_invites_rv.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+<span class="nc" id="L86">        eventList.clear();</span>
+        try {
+<span class="nc" id="L88">            adapter = new eventInvitesAdapter(requireContext(), eventList,</span>
+<span class="nc" id="L89">                    userDetailString, friendId, getParentFragmentManager());</span>
+<span class="nc" id="L90">        } catch (JSONException e) {</span>
+<span class="nc" id="L91">            throw new RuntimeException(e);</span>
+<span class="nc" id="L92">        }</span>
+<span class="nc" id="L93">        event_invites_rv.setAdapter(adapter);</span>
+
+        try {
+<span class="nc" id="L96">            JSONObject user = new JSONObject(userDetailString);</span>
+<span class="nc" id="L97">            int userId = user.getInt(&quot;id&quot;);</span>
+
+
+<span class="nc" id="L100">            makeMyEventRequest(userId);</span>
+<span class="nc" id="L101">            getUserInterestedEvents(userId);</span>
+
+<span class="nc" id="L103">        } catch (JSONException e) {</span>
+<span class="nc" id="L104">            Log.d(&quot;JSON PARSE ERROR&quot;, e.toString());</span>
+<span class="nc" id="L105">        }</span>
+
+
+
+<span class="nc" id="L109">        return view;</span>
+    }
+
+    private void populateEvents(JSONArray jsonArray) throws JSONException {
+
+
+        try {
+            // Takes in JSONArray object from response, loops over it
+            // extracts event details and calls EventAdapter to create a event item
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            for (int i = 0; i &lt; jsonArray.length(); i++) {</span>
+<span class="nc" id="L119">                JSONObject obj = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L120">                eventList.add(new EventItem(</span>
+<span class="nc" id="L121">                        obj.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L122">                        obj.getString(&quot;eventName&quot;),</span>
+<span class="nc" id="L123">                        obj.getString(&quot;eventTime&quot;),</span>
+<span class="nc" id="L124">                        obj.getString(&quot;eventLocation&quot;),</span>
+<span class="nc" id="L125">                        obj.getString(&quot;eventDate&quot;),</span>
+<span class="nc" id="L126">                        obj.getString(&quot;description&quot;)</span>
+                ));
+            }
+<span class="nc" id="L129">        } catch (Exception e) {</span>
+<span class="nc" id="L130">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L131">        }</span>
+
+
+<span class="nc" id="L134">    }</span>
+
+    private void makeMyEventRequest(int id) {
+
+
+<span class="nc" id="L139">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; +id;</span>
+
+<span class="nc" id="L141">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, server_url, null,</span>
+<span class="nc" id="L142">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        try {
+<span class="nc" id="L146">                            populateEvents(response);</span>
+<span class="nc" id="L147">                            adapter.notifyDataSetChanged();</span>
+
+<span class="nc" id="L149">                        } catch (JSONException e) {</span>
+<span class="nc" id="L150">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L151">                        }</span>
+
+<span class="nc" id="L153">                    }</span>
+<span class="nc" id="L154">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+<span class="nc" id="L158">            }</span>
+        });
+<span class="nc" id="L160">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L161">    }</span>
+
+    private void getUserInterestedEvents(int userId){
+<span class="nc" id="L164">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; + userId + &quot;/interested&quot;;</span>
+
+<span class="nc" id="L166">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET,</span>
+                server_url,
+                null,
+<span class="nc" id="L169">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+
+                        try {
+<span class="nc" id="L174">                            JSONArray attending = jsonObject.getJSONArray(&quot;attendingEvents&quot;);</span>
+<span class="nc" id="L175">                            populateEvents(attending);</span>
+<span class="nc" id="L176">                            adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L177">                        } catch (JSONException e) {</span>
+<span class="nc" id="L178">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L179">                        }</span>
+
+<span class="nc" id="L181">                    }</span>
+                },
+<span class="nc" id="L183">                new Response.ErrorListener(){</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L186">                        JSONArray userEvents = null;</span>
+<span class="nc" id="L187">                        Log.d(&quot;ERROR&quot;, volleyError.toString());</span>
+<span class="nc" id="L188">                    }</span>
+                });
+
+<span class="nc" id="L191">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L192">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

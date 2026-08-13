@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">UserAdapter.java</span></div><h1>UserAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.Friend;
+import com.example.synergy.R;
+import com.example.synergy.items.User;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
+
+public class UserAdapter extends RecyclerView.Adapter&lt;UserAdapter.UserViewHolder&gt; {
+
+
+    private Context context;
+    private List&lt;User&gt; users;
+    private String userDetailString;
+
+    public interface OnUserActionListener {
+        void onFriendRequestSent(int friendId);
+    }
+
+    private OnUserActionListener listener;
+
+    public void setOnUserActionListener(OnUserActionListener listener) {
+<span class="fc" id="L43">        this.listener = listener;</span>
+<span class="fc" id="L44">    }</span>
+
+<span class="fc" id="L46">    public UserAdapter(Context context, List&lt;User&gt; users, String userDetailString){</span>
+<span class="fc" id="L47">        this.context = context;</span>
+<span class="fc" id="L48">        this.users = users;</span>
+<span class="fc" id="L49">        this.userDetailString = userDetailString;</span>
+<span class="fc" id="L50">    }</span>
+
+    @NonNull
+    @Override
+    public UserViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="fc" id="L55">        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_user, parent, false);</span>
+
+<span class="fc" id="L57">        return new UserViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
+<span class="fc" id="L62">        User friend = users.get(position);</span>
+<span class="fc" id="L63">        holder.userName.setText(friend.getName());</span>
+
+<span class="fc" id="L65">        holder.addFriend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L66">            new AlertDialog.Builder(context)</span>
+<span class="nc" id="L67">                    .setTitle(&quot;Friend Request&quot;)</span>
+<span class="nc" id="L68">                    .setMessage(&quot;Send a friend request?&quot;)</span>
+<span class="nc" id="L69">                    .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L70">                        int friendId = friend.getId();</span>
+                        try {
+<span class="nc" id="L72">                            putFriendRequest(friendId);</span>
+<span class="nc" id="L73">                        } catch (JSONException e) {</span>
+<span class="nc" id="L74">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L75">                        }</span>
+
+<span class="nc" id="L77">                    })</span>
+<span class="nc" id="L78">                    .setNegativeButton(&quot;No&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L79">                        dialog.dismiss(); // just close the dialog</span>
+<span class="nc" id="L80">                    })</span>
+<span class="nc" id="L81">                    .show();</span>
+
+<span class="nc" id="L83">        });</span>
+
+
+
+<span class="fc" id="L87">        holder.itemView.setOnClickListener(v -&gt; {</span>
+
+<span class="nc" id="L89">            Toast.makeText(context, &quot;You clicked &quot; + friend.getName() + &quot;!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L90">        });</span>
+
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L96">        return users.size();</span>
+    }
+
+    public static class UserViewHolder extends RecyclerView.ViewHolder {
+        TextView userName;
+        ImageView addFriend;
+
+        public UserViewHolder(@NonNull View itemView){
+<span class="fc" id="L104">            super(itemView);</span>
+<span class="fc" id="L105">            userName = itemView.findViewById(R.id.friendName);</span>
+<span class="fc" id="L106">            addFriend = itemView.findViewById(R.id.addFriendButton);</span>
+
+<span class="fc" id="L108">        }</span>
+    }
+
+    public void updateList(List&lt;User&gt; filteredList) {
+<span class="nc" id="L112">        this.users = filteredList; // assuming your list variable is called userList</span>
+<span class="nc" id="L113">        notifyDataSetChanged();</span>
+<span class="nc" id="L114">    }</span>
+
+    private void putFriendRequest(int friendId) throws JSONException {
+<span class="nc" id="L117">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="nc" id="L118">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L119">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/request/&quot; + userId</span>
+                + &quot;/&quot; + friendId;
+
+<span class="nc" id="L122">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                server_url,
+                null,
+<span class="nc" id="L126">                new Response.Listener&lt;JSONObject&gt;() {</span>
+
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+<span class="nc" id="L130">                        Toast.makeText(context, &quot;User befriended&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                        if (listener != null) listener.onFriendRequestSent(friendId);</span>
+
+<span class="nc" id="L133">                    }</span>
+                },
+<span class="nc" id="L135">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L138">                        Toast.makeText(context, String.valueOf(volleyError), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L139">                    }</span>
+                }
+        );
+
+<span class="nc" id="L143">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L144">    }</span>
+
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L147">        new androidx.appcompat.app.AlertDialog.Builder(context)</span>
+<span class="nc" id="L148">                .setTitle(title)</span>
+<span class="nc" id="L149">                .setMessage(message)</span>
+<span class="nc" id="L150">                .setCancelable(false)</span>
+<span class="nc" id="L151">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L152">                .show();</span>
+<span class="nc" id="L153">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

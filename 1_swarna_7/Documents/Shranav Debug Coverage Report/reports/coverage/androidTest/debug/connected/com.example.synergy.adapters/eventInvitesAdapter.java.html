@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>eventInvitesAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">eventInvitesAdapter.java</span></div><h1>eventInvitesAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.sheets.EditEventSheet;
+import com.example.synergy.activities.EventAttendanceActivity;
+import com.example.synergy.fragments.EventInfoFragment;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class eventInvitesAdapter extends RecyclerView.Adapter&lt;eventInvitesAdapter.EventViewHolder&gt; {
+
+    private final FragmentManager fragmentManager;
+    private final Context context;
+    private final List&lt;EventItem&gt; eventList;
+    private final int userId;
+    private final int friendId;
+    private final String emailId;
+
+    private List&lt;EventItem&gt; fullList;
+
+
+    private final String userDetailString;
+
+    private boolean showAttendees;
+
+
+
+
+
+    public eventInvitesAdapter(Context context, List&lt;EventItem&gt; eventList,
+<span class="nc" id="L62">                        String userDetailString, int friendId, FragmentManager fragmentManager) throws JSONException {</span>
+<span class="nc" id="L63">        this.context = context;</span>
+<span class="nc" id="L64">        this.eventList = eventList;</span>
+
+
+<span class="nc" id="L67">        this.userDetailString = userDetailString;</span>
+<span class="nc" id="L68">        this.fragmentManager = fragmentManager;</span>
+
+<span class="nc" id="L70">        JSONObject userDetailsTemp = new JSONObject(userDetailString);</span>
+<span class="nc" id="L71">        userId = userDetailsTemp.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L72">        this.friendId = friendId;</span>
+<span class="nc" id="L73">        emailId = userDetailsTemp.getString(&quot;emailId&quot;);</span>
+
+<span class="nc" id="L75">    }</span>
+    @NonNull
+    @Override
+    public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="nc" id="L79">        View view = LayoutInflater.from(context).inflate(R.layout.item_button, parent, false);</span>
+<span class="nc" id="L80">        return new EventViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+<span class="nc" id="L85">        EventItem item = eventList.get(position);</span>
+
+<span class="nc" id="L87">        int eventId = item.getId();</span>
+
+<span class="nc" id="L89">        setupUI(holder, item);</span>
+
+<span class="nc" id="L91">        holder.itemView.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L94">                sendInvite(eventId);</span>
+<span class="nc" id="L95">            }</span>
+        });
+
+
+
+
+
+
+
+<span class="nc" id="L104">    }</span>
+
+    private void sendInvite(int eventId){
+<span class="nc" id="L107">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/&quot;</span>
+                +eventId+ &quot;/invite/&quot; + userId + &quot;/&quot; + friendId;
+
+<span class="nc" id="L110">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                url,
+                null,
+<span class="nc" id="L114">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                            if (response.getString(&quot;status&quot;).equals(&quot;error&quot;)){</span>
+<span class="nc" id="L119">                                Toast.makeText(context, &quot;User already invited to this event&quot;, Toast.LENGTH_SHORT).show();</span>
+
+                            } else {
+<span class="nc" id="L122">                                Toast.makeText(context, &quot;Invite Sent&quot;, Toast.LENGTH_SHORT).show();</span>
+                            }
+<span class="nc" id="L124">                        } catch (JSONException e) {</span>
+<span class="nc" id="L125">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L126">                        }</span>
+
+<span class="nc" id="L128">                    }</span>
+                },
+<span class="nc" id="L130">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L133">                        Log.d(&quot;VOLLEY ERROR&quot;, error.toString());</span>
+
+<span class="nc" id="L135">                    }</span>
+                }
+
+        );
+
+<span class="nc" id="L140">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L141">    }</span>
+
+
+    private void setupUI(EventViewHolder holder, EventItem item){
+<span class="nc" id="L145">        holder.eventTitle.setText(item.getEventName());</span>
+<span class="nc" id="L146">        holder.eventDetails.setText(item.getEventTime() + &quot; | &quot;+ item.getEventDate() + &quot; | &quot; +</span>
+<span class="nc" id="L147">                item.getEventLocation());</span>
+
+<span class="nc" id="L149">    }</span>
+
+
+
+
+
+    @Override
+    public int getItemCount() {
+<span class="nc" id="L157">        return eventList.size();</span>
+    }
+
+    public static class EventViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout eventCard;
+        TextView eventTitle, eventDetails;
+        Button deleteButton;
+        Button attendees;
+
+        public EventViewHolder(@NonNull View itemView) {
+<span class="nc" id="L167">            super(itemView);</span>
+<span class="nc" id="L168">            eventCard = itemView.findViewById(R.id.eventCard);</span>
+<span class="nc" id="L169">            eventTitle = itemView.findViewById(R.id.textEventTitle);</span>
+<span class="nc" id="L170">            eventDetails = itemView.findViewById(R.id.textEventDetails);</span>
+<span class="nc" id="L171">            deleteButton = itemView.findViewById(R.id.deleteEventButton);</span>
+<span class="nc" id="L172">            attendees = itemView.findViewById(R.id.showAttendeesButton);</span>
+<span class="nc" id="L173">        }</span>
+    }
+
+
+    //    Delete Event Listener to implement live updates
+    public interface OnEventDeletedListener {
+        void onEventDeleted(int eventId);
+    }
+
+    private OnEventDeletedListener deleteListener;
+
+    public void setOnEventDeletedListener(OnEventDeletedListener listener) {
+<span class="nc" id="L185">        this.deleteListener = listener;</span>
+<span class="nc" id="L186">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

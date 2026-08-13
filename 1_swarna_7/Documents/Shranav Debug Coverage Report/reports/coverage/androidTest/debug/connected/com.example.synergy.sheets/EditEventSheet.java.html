@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EditEventSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">EditEventSheet.java</span></div><h1>EditEventSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
+<span class="nc" id="L38">public class EditEventSheet extends BottomSheetDialogFragment {</span>
+
+    private static final String ARG_USER_DETAILS = &quot;user_details&quot; ;
+    private static final String ARG_EVENT_DETAILS = &quot;event_details&quot;;
+    EditText eventName;
+    EditText eventLocation;
+    EditText eventDate;
+    EditText eventTime;
+    Button editEventButton;
+    TextView sheetTitle;
+
+    EditText description;
+    boolean createNodeForEvent;
+    String userDetails;
+    String eventDetails;
+    @SuppressLint(&quot;UseSwitchCompatOrMaterialCode&quot;)
+    Switch createNode;
+<span class="nc" id="L55">    boolean hasNode = false;</span>
+    String locationForEditedEvent;
+    EditText editTags;
+    EditText nodeDescription;
+    int eventIdForEditedEvent;
+
+
+
+    public static EditEventSheet newInstance(String userDetails, String eventDetails) {
+<span class="nc" id="L64">        EditEventSheet fragment = new EditEventSheet();</span>
+<span class="nc" id="L65">        Bundle args = new Bundle();</span>
+<span class="nc" id="L66">        args.putString(ARG_USER_DETAILS, userDetails);</span>
+<span class="nc" id="L67">        args.putString(ARG_EVENT_DETAILS, eventDetails);</span>
+<span class="nc" id="L68">        fragment.setArguments(args);</span>
+<span class="nc" id="L69">        return fragment;</span>
+    }
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState){
+<span class="nc" id="L75">        View root = inflater.inflate(R.layout.create_event_sheet, container, false);</span>
+
+
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if(getArguments() != null){</span>
+<span class="nc" id="L80">            userDetails = getArguments().getString(ARG_USER_DETAILS);</span>
+
+<span class="nc" id="L82">            eventDetails =getArguments().getString(ARG_EVENT_DETAILS);</span>
+        }
+
+<span class="nc" id="L85">        editTags = root.findViewById(R.id.editTags);</span>
+<span class="nc" id="L86">        description = root.findViewById(R.id.editDescription);</span>
+<span class="nc" id="L87">        nodeDescription = root.findViewById(R.id.eventDescription);</span>
+<span class="nc" id="L88">        createNode = root.findViewById(R.id.toggleNode);</span>
+<span class="nc" id="L89">        sheetTitle = root.findViewById(R.id.textView5);</span>
+<span class="nc" id="L90">        eventName = root.findViewById(R.id.editEventName);</span>
+<span class="nc" id="L91">        eventLocation = root.findViewById(R.id.editEventLocation);</span>
+<span class="nc" id="L92">        eventDate = root.findViewById(R.id.editEventDate);</span>
+<span class="nc" id="L93">        eventTime = root.findViewById(R.id.editEventTime);</span>
+<span class="nc" id="L94">        sheetTitle.setText(&quot;Edit your Event!&quot;);</span>
+
+        try {
+<span class="nc" id="L97">            JSONObject eventDetailObject = new JSONObject(eventDetails);</span>
+<span class="nc" id="L98">            JSONObject userDetailObject = new JSONObject(userDetails);</span>
+//          If event has a map node display options to edit map node, if not user
+//          can choose to create a map node. Edit options would not show up then
+<span class="nc" id="L101">            Log.d(&quot;EVENT DETAIL&quot;, eventDetailObject.toString());</span>
+<span class="nc" id="L102">            editTags.setEnabled(false);</span>
+<span class="nc" id="L103">            eventName.setText(eventDetailObject.getString(&quot;eventName&quot;));</span>
+<span class="nc" id="L104">            eventLocation.setText(eventDetailObject.getString(&quot;eventLocation&quot;));</span>
+<span class="nc" id="L105">            eventDate.setText(eventDetailObject.getString(&quot;eventDate&quot;));</span>
+<span class="nc" id="L106">            eventTime.setText(eventDetailObject.getString(&quot;eventTime&quot;));</span>
+<span class="nc" id="L107">            description.setText(eventDetailObject.getString(&quot;description&quot;));</span>
+
+
+
+
+
+<span class="nc" id="L113">            editEventButton = root.findViewById(R.id.createButton);</span>
+
+<span class="nc" id="L115">            editEventButton.setText(&quot;Save&quot;);</span>
+
+<span class="nc" id="L117">            nodeDescription.setVisibility(View.GONE);</span>
+
+<span class="nc" id="L119">            getMapNode(eventDetailObject.getInt(&quot;id&quot;));</span>
+<span class="nc" id="L120">            eventIdForEditedEvent = eventDetailObject.getInt(&quot;id&quot;);</span>
+
+
+
+
+
+
+<span class="nc" id="L127">            editEventButton.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+                    try {
+<span class="nc" id="L131">                        locationForEditedEvent = String.valueOf(eventLocation.getText());</span>
+<span class="nc" id="L132">                        makeEditRequest(eventDetailObject.getInt(&quot;id&quot;), userDetailObject.getInt(&quot;id&quot;));</span>
+
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                        if (createNodeForEvent){</span>
+                            // Make a POST request to create a map node
+<span class="nc" id="L137">                            createNodeRequest();</span>
+                        }
+<span class="nc" id="L139">                    } catch (JSONException e) {</span>
+<span class="nc" id="L140">                        throw new RuntimeException(e);</span>
+<span class="nc" id="L141">                    }</span>
+<span class="nc" id="L142">                }</span>
+            });
+<span class="nc" id="L144">        } catch (JSONException e) {</span>
+<span class="nc" id="L145">            throw new RuntimeException(e);</span>
+<span class="nc" id="L146">        }</span>
+
+
+
+
+
+<span class="nc" id="L152">        return root;</span>
+    }
+
+//    TODO: Fix body of request
+    private void makeEditRequest(int eventId, int userId) throws JSONException {
+<span class="nc" id="L157">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/&quot; + eventId</span>
+                + &quot;?userId=&quot; + userId;
+
+<span class="nc" id="L160">        JSONObject jsonBody = new JSONObject();</span>
+
+<span class="nc" id="L162">        jsonBody.put(&quot;eventName&quot;, eventName.getText().toString());</span>
+<span class="nc" id="L163">        jsonBody.put(&quot;eventLocation&quot;, eventLocation.getText().toString());</span>
+<span class="nc" id="L164">        jsonBody.put(&quot;eventDate&quot;, eventDate.getText().toString());</span>
+<span class="nc" id="L165">        jsonBody.put(&quot;eventTime&quot;, eventTime.getText().toString());</span>
+<span class="nc" id="L166">        jsonBody.put(&quot;description&quot;, description.getText().toString());</span>
+
+<span class="nc" id="L168">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                server_url,
+                jsonBody,
+<span class="nc" id="L172">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+<span class="nc" id="L175">                        showStatusDialog(&quot;Success&quot;, &quot;Event Updated&quot;);</span>
+<span class="nc" id="L176">                        hasNode = true;</span>
+<span class="nc" id="L177">                    }</span>
+                },
+<span class="nc" id="L179">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L182">                        showStatusDialog(&quot;Failure&quot;, volleyError.toString());</span>
+<span class="nc" id="L183">                        hasNode = false;</span>
+<span class="nc" id="L184">                    }</span>
+                }
+
+        );
+
+<span class="nc" id="L189">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L190">    }</span>
+
+
+    private void getMapNode(int eventId){
+        /**
+         * Method used to carry out a get request to et all map nodes
+         * This usually helps to populate map nodes, but in this context
+         * we use it to get map nodes and validate it with the event that we
+         * are currently editing.
+         */
+<span class="nc" id="L200">        String get_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/map/node/all&quot;;</span>
+
+
+
+<span class="nc" id="L204">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                get_url,
+                null,
+<span class="nc" id="L208">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray jsonArray) {
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                        for (int i =0; i &lt; jsonArray.length(); i++){</span>
+                            try {
+<span class="nc" id="L213">                                JSONObject obj = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L214">                                JSONArray eventsOnNode = obj.getJSONArray(&quot;events&quot;);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">                                for (int j =0; j &lt; eventsOnNode.length(); j++){</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                                    if (eventsOnNode.getJSONObject(j).getInt(&quot;id&quot;) == eventId){</span>
+<span class="nc" id="L217">                                        hasNode = true;</span>
+<span class="nc" id="L218">                                        createNode.setChecked(true);</span>
+<span class="nc" id="L219">                                        createNode.setEnabled(false);</span>
+<span class="nc" id="L220">                                        Toast.makeText(requireContext(), &quot;Found Node&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L221">                                        description.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L222">                                        break;</span>
+                                    }
+                                }
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                                if (hasNode){</span>
+<span class="nc" id="L226">                                    break;</span>
+                                }
+<span class="nc" id="L228">                            } catch (JSONException e) {</span>
+<span class="nc" id="L229">                                throw new RuntimeException(e);</span>
+<span class="nc" id="L230">                            }</span>
+                        }
+
+<span class="nc bnc" id="L233" title="All 2 branches missed.">                        if (!hasNode){</span>
+<span class="nc" id="L234">                            createNode.setOnCheckedChangeListener((buttonView, isChecked) -&gt; {</span>
+<span class="nc" id="L235">                                createNodeForEvent = isChecked;</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                                if (isChecked){</span>
+<span class="nc" id="L238">                                    description.setVisibility(View.VISIBLE);</span>
+                                } else {
+<span class="nc" id="L240">                                    description.setVisibility(View.GONE);</span>
+                                }
+
+<span class="nc" id="L243">                            });</span>
+                        }
+
+
+<span class="nc" id="L247">                    }</span>
+                },
+                error -&gt; {
+<span class="nc" id="L250">                    showStatusDialog(&quot;Failure&quot;, &quot;Map Node Fetch went wrong!&quot;);</span>
+
+<span class="nc" id="L252">                }</span>
+
+        );
+
+<span class="nc" id="L256">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L257">    }</span>
+
+    private void createNodeRequest() throws JSONException {
+        /**
+         * Function to make a request call to POST new event map node
+         */
+<span class="nc" id="L263">        String descriptionString = String.valueOf(description.getText());</span>
+<span class="nc" id="L264">        JSONObject jsonBody = new JSONObject();</span>
+<span class="nc" id="L265">        jsonBody.put(&quot;description&quot;, descriptionString);</span>
+<span class="nc" id="L266">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/map/node/create/&quot;;</span>
+
+<span class="nc" id="L268">        final Context context = requireContext(); // capture safely on main thread</span>
+<span class="nc" id="L269">        new Thread(() -&gt; {</span>
+<span class="nc" id="L270">            Geocoder geocoder = new Geocoder(context, Locale.getDefault());</span>
+            try {
+<span class="nc" id="L272">                List&lt;Address&gt; address = geocoder.getFromLocationName(locationForEditedEvent, 1);</span>
+<span class="nc bnc" id="L273" title="All 4 branches missed.">                if (address != null &amp;&amp; !address.isEmpty()) {</span>
+<span class="nc" id="L274">                    Address location = address.get(0);</span>
+<span class="nc" id="L275">                    String node_url = server_url + eventIdForEditedEvent + &quot;/&quot; + location.getLatitude() + &quot;/&quot; + location.getLongitude();</span>
+
+<span class="nc" id="L277">                    JsonObjectRequest request = new JsonObjectRequest(</span>
+                            Request.Method.POST,
+                            node_url,
+                            jsonBody,
+<span class="nc" id="L281">                            response -&gt; Toast.makeText(context, &quot;Node Created&quot;, Toast.LENGTH_SHORT).show(),</span>
+<span class="nc" id="L282">                            volleyError -&gt; {}</span>
+
+                    );
+
+<span class="nc" id="L286">                    VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L287">                } else {</span>
+<span class="nc" id="L288">                    requireActivity().runOnUiThread(() -&gt;</span>
+<span class="nc" id="L289">                            Toast.makeText(context, &quot;Could not find location&quot;, Toast.LENGTH_SHORT).show()</span>
+                    );
+                }
+<span class="nc" id="L292">            } catch (IOException e) {</span>
+<span class="nc" id="L293">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L294">                requireActivity().runOnUiThread(() -&gt;</span>
+<span class="nc" id="L295">                        Toast.makeText(context, &quot;Geocoder error: &quot; + e.getMessage(), Toast.LENGTH_SHORT).show()</span>
+                );
+<span class="nc" id="L297">            }</span>
+<span class="nc" id="L298">        }).start();</span>
+<span class="nc" id="L299">    }</span>
+
+
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L303">        new androidx.appcompat.app.AlertDialog.Builder(requireContext())</span>
+<span class="nc" id="L304">                .setTitle(title)</span>
+<span class="nc" id="L305">                .setMessage(message)</span>
+<span class="nc" id="L306">                .setCancelable(false)</span>
+<span class="nc" id="L307">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L308">                .show();</span>
+<span class="nc" id="L309">    }</span>
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

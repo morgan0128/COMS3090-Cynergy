@@ -1,0 +1,6 @@
+Events\Model\User.class
+Events\Controller\EventsController.class
+Events\Repository\EventsRepository.class
+Events\Repository\UserRepository.class
+Events\Model\Events.class
+Events\EventsApplication.class

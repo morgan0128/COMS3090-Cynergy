@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.example.synergy"},{"l":"com.example.synergy.adapters"},{"l":"com.example.synergy.fragments"}];updateSearchResults();

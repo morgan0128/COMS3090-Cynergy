@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SignupBottomSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">SignupBottomSheet.java</span></div><h1>SignupBottomSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.activities.HomeActivity;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="fc" id="L30">public class SignupBottomSheet extends BottomSheetDialogFragment {</span>
+
+    private EditText ETEmail;
+    private EditText ETPassword;
+
+    private static final String POSTMAN_URL = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/signup&quot;;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+<span class="fc" id="L42">        View root = inflater.inflate(R.layout.bottom_sheet_signup, container, false);</span>
+
+<span class="fc" id="L44">        Button btnGoToSignup = root.findViewById(R.id.go_to_login);</span>
+<span class="fc" id="L45">        Button signUpButton = root.findViewById(R.id.signUpButton);</span>
+<span class="fc" id="L46">        ETEmail = root.findViewById(R.id.etEmail);</span>
+<span class="fc" id="L47">        ETPassword = root.findViewById(R.id.etPassword);</span>
+
+<span class="fc" id="L49">        btnGoToSignup.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L50">            dismiss();</span>
+<span class="nc" id="L51">            new LoginBottomSheet().show(getParentFragmentManager(), &quot;LoginSheet&quot;);</span>
+<span class="nc" id="L52">        });</span>
+
+<span class="fc" id="L54">        signUpButton.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L55">            String email = ETEmail.getText().toString().trim();</span>
+<span class="nc" id="L56">            String password = ETPassword.getText().toString().trim();</span>
+
+<span class="nc bnc" id="L58" title="All 4 branches missed.">            if (email.isEmpty() || password.isEmpty()) {</span>
+<span class="nc" id="L59">                showStatusDialog(&quot;Missing Info&quot;, &quot;Please enter both email and password.&quot;);</span>
+            } else {
+<span class="nc" id="L61">                makeServerReq(email, password);</span>
+            }
+
+<span class="nc" id="L64">            Intent intent = new Intent(getActivity(), HomeActivity.class);</span>
+<span class="nc" id="L65">            String data = &quot;{ \&quot;email\&quot;: \&quot;&quot; + email + &quot;\&quot;, \&quot;password\&quot;: \&quot;&quot; + password + &quot;\&quot; }&quot;;</span>
+<span class="nc" id="L66">            intent.putExtra(&quot;response&quot;, data);</span>
+<span class="nc" id="L67">            startActivity(intent);</span>
+<span class="nc" id="L68">        });</span>
+
+<span class="fc" id="L70">        return root;</span>
+    }
+
+    private void makeServerReq(String email, String password) {
+        try {
+<span class="nc" id="L75">            JSONObject signupData = new JSONObject();</span>
+<span class="nc" id="L76">            signupData.put(&quot;emailId&quot;, email);</span>
+<span class="nc" id="L77">            signupData.put(&quot;userPassword&quot;, password);</span>
+
+<span class="nc" id="L79">            JsonObjectRequest jsonRequest = new JsonObjectRequest(</span>
+                    Request.Method.POST,
+                    POSTMAN_URL,
+                    signupData,
+<span class="nc" id="L83">                    new Response.Listener&lt;JSONObject&gt;() {</span>
+                        @Override
+                        public void onResponse(JSONObject response) {
+<span class="nc" id="L86">                            Log.d(&quot;Volley Response&quot;, response.toString());</span>
+<span class="nc" id="L87">                            showStatusDialog(&quot;Success&quot;, &quot;Signup successful!&quot;);</span>
+
+<span class="nc" id="L89">                            ETEmail.setText(&quot;&quot;);</span>
+<span class="nc" id="L90">                            ETPassword.setText(&quot;&quot;);</span>
+
+<span class="nc" id="L92">                            Intent intent = new Intent(getActivity(), HomeActivity.class);</span>
+<span class="nc" id="L93">                            String data = &quot;{ \&quot;email\&quot;: \&quot;&quot; + email + &quot;\&quot;, \&quot;password\&quot;: \&quot;&quot; + password + &quot;\&quot; }&quot;;</span>
+<span class="nc" id="L94">                            intent.putExtra(&quot;response&quot;, data);</span>
+<span class="nc" id="L95">                            startActivity(intent);</span>
+<span class="nc" id="L96">                        }</span>
+                    },
+<span class="nc" id="L98">                    new Response.ErrorListener() {</span>
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L101">                            Log.e(&quot;Volley Error&quot;, error.toString());</span>
+<span class="nc" id="L102">                            showStatusDialog(&quot;Error&quot;, &quot;Signup failed. Please try again.&quot;);</span>
+<span class="nc" id="L103">                        }</span>
+                    }
+<span class="nc" id="L105">            ) {</span>
+                @Override
+                public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L108">                    Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L109">                    headers.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L110">                    return headers;</span>
+                }
+            };
+
+<span class="nc" id="L114">            VolleySingleton.getInstance(requireContext()).addToRequestQueue(jsonRequest);</span>
+
+<span class="nc" id="L116">        } catch (JSONException e) {</span>
+<span class="nc" id="L117">            e.printStackTrace();</span>
+<span class="nc" id="L118">            showStatusDialog(&quot;Error&quot;, &quot;Failed to create signup request.&quot;);</span>
+<span class="nc" id="L119">        }</span>
+<span class="nc" id="L120">    }</span>
+
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L123">        new androidx.appcompat.app.AlertDialog.Builder(requireContext())</span>
+<span class="nc" id="L124">                .setTitle(title)</span>
+<span class="nc" id="L125">                .setMessage(message)</span>
+<span class="nc" id="L126">                .setCancelable(false)</span>
+<span class="nc" id="L127">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L128">                .show();</span>
+<span class="nc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

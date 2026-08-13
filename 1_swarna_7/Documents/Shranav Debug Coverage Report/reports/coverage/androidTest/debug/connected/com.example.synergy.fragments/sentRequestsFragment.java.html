@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>sentRequestsFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">sentRequestsFragment.java</span></div><h1>sentRequestsFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SearchView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.sentRequestAdapter;
+import com.example.synergy.items.User;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class sentRequestsFragment extends Fragment {
+
+    private String userDetailString;
+    private sentRequestAdapter adapter;
+    private List&lt;User&gt; friends;
+
+<span class="fc" id="L37">    public sentRequestsFragment() {</span>
+        // Required empty public constructor
+<span class="fc" id="L39">    }</span>
+
+    public static sentRequestsFragment newInstance(String userDetails) {
+<span class="fc" id="L42">        sentRequestsFragment fragment = new sentRequestsFragment();</span>
+<span class="fc" id="L43">        Bundle args = new Bundle();</span>
+<span class="fc" id="L44">        args.putString(&quot;userDetails&quot;, userDetails);</span>
+<span class="fc" id="L45">        fragment.setArguments(args);</span>
+<span class="fc" id="L46">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        // Inflate the fragment layout (create a layout file called fragment_friends_list.xml)
+<span class="fc" id="L55">        return inflater.inflate(R.layout.fragment_sent_requests, container, false);</span>
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+<span class="fc" id="L60">        super.onViewCreated(view, savedInstanceState);</span>
+
+        // Retrieve data passed to fragment
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="fc" id="L64">            userDetailString = getArguments().getString(&quot;userDetails&quot;);</span>
+        }
+
+        // Initialize views
+<span class="fc" id="L68">        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);</span>
+<span class="fc" id="L69">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="fc" id="L71">        friends = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L72">        adapter = new sentRequestAdapter(requireContext(), friends);</span>
+<span class="fc" id="L73">        recyclerView.setAdapter(adapter);</span>
+
+        try {
+<span class="fc" id="L76">            fetchSentRequests();</span>
+<span class="nc" id="L77">        } catch (JSONException e) {</span>
+<span class="nc" id="L78">            throw new RuntimeException(e);</span>
+<span class="fc" id="L79">        }</span>
+
+
+<span class="fc" id="L82">        SearchView searchFriends = view.findViewById(R.id.searchUsers);</span>
+<span class="fc" id="L83">        searchFriends.setOnQueryTextListener(new SearchView.OnQueryTextListener(){</span>
+            /**
+             *  Updates the list of Friends when we submit a query and filters
+             *  users based on the query
+             *
+             * @param query the query text that is to be submitted
+             *
+             * @return true
+             */
+            @Override
+            public boolean onQueryTextSubmit(String query){
+<span class="nc" id="L94">                filterUsers(query);</span>
+<span class="nc" id="L95">                return true;</span>
+            }
+
+            /**
+             * Updates the list of Friends as we are writing a query so that
+             * the friend list is being filtered as we type in the search bar.
+             *
+             * @param newText the new content of the query text field.
+             *
+             * @return true
+             */
+            @Override
+            public boolean onQueryTextChange(String newText){
+<span class="nc" id="L108">                filterUsers(newText);</span>
+<span class="nc" id="L109">                return true;</span>
+            }
+        });
+
+<span class="fc" id="L113">    }</span>
+
+    /**
+     * Based on a query text we filter the list of Friends so that it only
+     * shows users with the matching name
+     * shows users with the matching name
+     *
+     * @param text : A queried text we get when we type into the search bar
+     */
+    private void filterUsers(String text){
+<span class="nc" id="L123">        List&lt;User&gt; filteredList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        for (User user: friends){</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (user.getName().toLowerCase().contains(text.toLowerCase())){</span>
+<span class="nc" id="L126">                filteredList.add(user);</span>
+            }
+<span class="nc" id="L128">        }</span>
+<span class="nc" id="L129">        adapter.updateList(filteredList);</span>
+<span class="nc" id="L130">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="fc" id="L134">        super.onResume();</span>
+        try {
+<span class="fc" id="L136">            fetchSentRequests();</span>
+<span class="nc" id="L137">        } catch (JSONException e) {</span>
+<span class="nc" id="L138">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L139">        }</span>
+<span class="fc" id="L140">    }</span>
+
+    private void fetchSentRequests() throws JSONException {
+<span class="fc" id="L143">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="fc" id="L144">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L145">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/pending/&quot;</span>
+                + userId + &quot;/sent&quot;;
+
+<span class="fc" id="L148">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+                this::handleFetchSuccess,
+                error -&gt; {
+<span class="nc" id="L154">                    Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L155">                    Toast.makeText(requireContext(), &quot;Failed to load friends&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L156">                }</span>
+        );
+
+<span class="fc" id="L159">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L160">    }</span>
+
+    private void handleFetchSuccess(JSONArray response){
+<span class="fc" id="L163">        friends.clear();</span>
+        // response is a JsonArray so we loop through this
+        // array to get the Friend JsonObject
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+            try {
+<span class="fc" id="L168">                JSONObject object = response.getJSONObject(i);</span>
+<span class="fc" id="L169">                JSONObject friendObject = object.getJSONObject(&quot;friend&quot;);</span>
+<span class="fc" id="L170">                friends.add(new User(friendObject));</span>
+<span class="nc" id="L171">            } catch (JSONException e) {</span>
+<span class="nc" id="L172">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L173">            }</span>
+        }
+<span class="fc" id="L175">        adapter.notifyDataSetChanged();</span>
+<span class="fc" id="L176">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

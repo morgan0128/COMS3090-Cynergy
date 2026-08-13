@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventIssueFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">EventIssueFragment.java</span></div><h1>EventIssueFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.TicketApi;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="nc" id="L26">public class EventIssueFragment extends Fragment {</span>
+
+    private static final String ARG_USER_ID = &quot;userId&quot;; // this is your sponsorId
+    private static final String TAG = &quot;EventIssueFragment&quot;;
+
+    private EditText eventNameInput;
+    private EditText eventLocationInput;
+    private EditText eventDateInput;
+    private EditText eventTimeInput;
+    private Button  submitButton;
+
+    // sponsorId == userId passed in from the Activity
+<span class="nc" id="L38">    private int sponsorId = -1;</span>
+
+    public static EventIssueFragment newInstance(int userId) {
+<span class="nc" id="L41">        EventIssueFragment fragment = new EventIssueFragment();</span>
+<span class="nc" id="L42">        Bundle args = new Bundle();</span>
+<span class="nc" id="L43">        args.putInt(ARG_USER_ID, userId);</span>
+<span class="nc" id="L44">        fragment.setArguments(args);</span>
+<span class="nc" id="L45">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState
+    ) {
+<span class="nc" id="L55">        View view = inflater.inflate(R.layout.fragment_event_issue_form, container, false);</span>
+
+<span class="nc" id="L57">        eventNameInput     = view.findViewById(R.id.eventNameInput);</span>
+<span class="nc" id="L58">        eventLocationInput = view.findViewById(R.id.eventLocationInput);</span>
+<span class="nc" id="L59">        eventDateInput     = view.findViewById(R.id.eventDateInput);</span>
+<span class="nc" id="L60">        eventTimeInput     = view.findViewById(R.id.eventTimeInput);</span>
+<span class="nc" id="L61">        submitButton       = view.findViewById(R.id.submitEventIssueBtn);</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="nc" id="L64">            sponsorId = getArguments().getInt(ARG_USER_ID, -1);</span>
+        }
+
+<span class="nc" id="L67">        submitButton.setOnClickListener(v -&gt; submitEventIssue());</span>
+
+<span class="nc" id="L69">        return view;</span>
+    }
+
+    private void submitEventIssue() {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (sponsorId &lt;= 0) {</span>
+<span class="nc" id="L74">            Toast.makeText(requireContext(), &quot;Missing sponsor id&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L75">            return;</span>
+        }
+
+<span class="nc" id="L78">        String name     = eventNameInput.getText().toString().trim();</span>
+<span class="nc" id="L79">        String location = eventLocationInput.getText().toString().trim();</span>
+<span class="nc" id="L80">        String date     = eventDateInput.getText().toString().trim();</span>
+<span class="nc" id="L81">        String time     = eventTimeInput.getText().toString().trim();</span>
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (TextUtils.isEmpty(name) ||</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                TextUtils.isEmpty(location) ||</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                TextUtils.isEmpty(date) ||</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                TextUtils.isEmpty(time)) {</span>
+
+<span class="nc" id="L88">            Toast.makeText(requireContext(), &quot;Please fill all fields&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L89">            return;</span>
+        }
+
+<span class="nc" id="L92">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L94">            body.put(&quot;eventName&quot;,     name);</span>
+<span class="nc" id="L95">            body.put(&quot;eventLocation&quot;, location);</span>
+<span class="nc" id="L96">            body.put(&quot;eventDate&quot;,     date);</span>
+<span class="nc" id="L97">            body.put(&quot;eventTime&quot;,     time);</span>
+<span class="nc" id="L98">            body.put(&quot;sponsorId&quot;,     sponsorId);</span>
+<span class="nc" id="L99">        } catch (JSONException e) {</span>
+<span class="nc" id="L100">            Log.e(TAG, &quot;JSON build error&quot;, e);</span>
+<span class="nc" id="L101">            Toast.makeText(requireContext(), &quot;Failed to build request body&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L102">            return;</span>
+<span class="nc" id="L103">        }</span>
+
+<span class="nc" id="L105">        String url = TicketApi.POST_APPROVE_EVENT;</span>
+
+<span class="nc" id="L107">        Log.d(TAG, &quot;submit body = &quot; + body);</span>
+
+<span class="nc" id="L109">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                url,
+                body,
+                response -&gt; {
+<span class="nc" id="L114">                    Toast.makeText(requireContext(), &quot;Event approval request sent&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L115">                    clearFields();</span>
+<span class="nc" id="L116">                },</span>
+                error -&gt; {
+<span class="nc" id="L118">                    Log.e(TAG, &quot;Request failed&quot;, error);</span>
+<span class="nc" id="L119">                    Toast.makeText(requireContext(), &quot;Failed: &quot; + error.toString(), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L120">                }</span>
+        );
+
+<span class="nc" id="L123">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L124">    }</span>
+
+    private void clearFields() {
+<span class="nc" id="L127">        eventNameInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L128">        eventLocationInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L129">        eventDateInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L130">        eventTimeInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L131">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

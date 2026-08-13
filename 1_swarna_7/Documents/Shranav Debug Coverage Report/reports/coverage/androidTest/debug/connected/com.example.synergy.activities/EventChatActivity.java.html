@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventChatActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">EventChatActivity.java</span></div><h1>EventChatActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.EventWebSocketListener;
+import com.example.synergy.EventWebSocketManager;
+import com.example.synergy.R;
+import com.example.synergy.adapters.ChatAdapter;
+import com.example.synergy.items.ChatMessage;
+
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
+
+import java.util.Random;
+
+
+/**
+ * Activity that manages real-time event chat.
+ *
+ * &lt;p&gt;This screen allows users to:&lt;/p&gt;
+ * &lt;ul&gt;
+ *     &lt;li&gt;Send and receive chat messages&lt;/li&gt;
+ *     &lt;li&gt;Load chat history from the backend&lt;/li&gt;
+ *     &lt;li&gt;Receive real-time updates through WebSocket&lt;/li&gt;
+ *     &lt;li&gt;See connection status (connected/disconnected) through the dot&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;
+ * It uses EventWebSocketManager to maintain a live connection and
+ * ChatAdapter to display messages inside a RecyclerView.
+ * &lt;/p&gt;
+ */
+<span class="nc" id="L47">public class EventChatActivity extends AppCompatActivity implements EventWebSocketListener {</span>
+
+    /** Back button that allows us to exit the chat screen. */
+    private ImageButton backBtn;
+
+    /** Send button used to send a chat message. */
+    private ImageButton sendBtn;
+
+    /** Text field where the user types the message. */
+    private EditText msgEdt;
+
+    /** RecyclerView displaying all chat messages. */
+    private RecyclerView messagesRv;
+
+    /** Small colored dot indicating online/offline WebSocket status. */
+    private View statusDot;
+
+    /** The title of the chat screen (event name). */
+    private TextView titleTv;
+
+    /** Adapter that holds and displays all chat messages. */
+    private ChatAdapter adapter;
+
+    /** ID of the current user. */
+    private String userId;
+
+    /** The user's display name shown in chat messages. */
+    private String displayName;
+
+    /** The chatroom ID the current user is placed in. */
+    private String chatroomId;
+
+    /** The ID of the event this chat belongs to. */
+    private String eventId;
+
+    /** Base URL for GET request */
+    private static final String BASE =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080&quot;;
+
+    /**
+     * Initializes the activity:
+     * - Loads views
+     * - Reads intent data
+     * - Sets up RecyclerView and buttons
+     * - Loads chat history from backend
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L95">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L96">        setContentView(R.layout.activity_chat);</span>
+
+<span class="nc" id="L98">        initViews();</span>
+<span class="nc" id="L99">        initIntentData();</span>
+<span class="nc" id="L100">        setupRecycler();</span>
+<span class="nc" id="L101">        setupButtons();</span>
+<span class="nc" id="L102">        loadChatHistory();</span>
+<span class="nc" id="L103">    }</span>
+
+
+    /**
+     * Finds all the UI elements used in this activity.
+     * Separating UI from the rest of the code.
+     */
+    private void initViews() {
+<span class="nc" id="L111">        backBtn    = findViewById(R.id.backBtn);</span>
+<span class="nc" id="L112">        sendBtn    = findViewById(R.id.sendBtn);</span>
+<span class="nc" id="L113">        msgEdt     = findViewById(R.id.msgEdt);</span>
+<span class="nc" id="L114">        messagesRv = findViewById(R.id.messagesRv);</span>
+<span class="nc" id="L115">        statusDot  = findViewById(R.id.statusDot);</span>
+<span class="nc" id="L116">        titleTv    = findViewById(R.id.titleTv);</span>
+<span class="nc" id="L117">    }</span>
+
+    /**
+     * Reads data passed from EventAttendanceActivity.
+     * Sets:
+     * - userId
+     * - eventId
+     * - displayName
+     * - chatroomId
+     */
+    private void initIntentData() {
+<span class="nc" id="L128">        Intent i = getIntent();</span>
+
+<span class="nc" id="L130">        userId = String.valueOf(i.getIntExtra(&quot;user_id&quot;, 1)); // default 1</span>
+<span class="nc" id="L131">        eventId = String.valueOf(i.getIntExtra(&quot;event_id&quot;, 1));</span>
+
+<span class="nc" id="L133">        Random random = new Random();</span>
+<span class="nc" id="L134">        chatroomId = eventId;</span>
+
+
+        // Display event name
+<span class="nc" id="L138">        String eventTitle = i.getStringExtra(&quot;event_name&quot;);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (!TextUtils.isEmpty(eventTitle))</span>
+<span class="nc" id="L140">            titleTv.setText(eventTitle + &quot; Chat&quot;);</span>
+<span class="nc" id="L141">    }</span>
+
+    /**
+     * Sets up RecyclerView for displaying chat messages.
+     */
+    private void setupRecycler() {
+<span class="nc" id="L147">        adapter = new ChatAdapter();</span>
+
+<span class="nc" id="L149">        LinearLayoutManager lm =</span>
+                new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
+
+<span class="nc" id="L152">        messagesRv.setLayoutManager(lm);</span>
+<span class="nc" id="L153">        messagesRv.setAdapter(adapter);</span>
+<span class="nc" id="L154">    }</span>
+
+    /**
+     * Sets listeners for buttons:
+     * - Back button closes activity
+     * - Send button sends WebSocket message
+     */
+    private void setupButtons() {
+
+<span class="nc" id="L163">        backBtn.setOnClickListener(v -&gt; finish()); //back button listener</span>
+
+<span class="nc" id="L165">        sendBtn.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L166">            String txt = msgEdt.getText().toString().trim(); //trimming the text</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (txt.isEmpty()) return;</span>
+
+            // Send message through WebSocket
+<span class="nc" id="L170">            EventWebSocketManager.getInstance().send(txt);</span>
+<span class="nc" id="L171">            msgEdt.setText(&quot;&quot;);  // clear text field after sending</span>
+<span class="nc" id="L172">        });</span>
+<span class="nc" id="L173">    }</span>
+
+
+    /**
+     * Retrieves old chat messages from backend.
+     * Expecting a JSON array of raw strings.
+     */
+    private void loadChatHistory() {
+<span class="nc" id="L181">        String url = BASE + &quot;/api/events/&quot; + chatroomId + &quot;/chat&quot;; // The full GET URL for chat history</span>
+
+<span class="nc" id="L183">        StringRequest req = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L186">                        JSONArray arr = new JSONArray(response);</span>
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) { // going through all messages</span>
+
+<span class="nc" id="L190">                            String raw = arr.getString(i).trim(); //trimming</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                            if (raw.isEmpty()) continue;</span>
+
+<span class="nc" id="L193">                            adapter.add(new ChatMessage( //adding the chat message</span>
+                                    raw,
+                                    &quot;other&quot;,
+<span class="nc" id="L196">                                    System.currentTimeMillis()</span>
+                            ));
+                        }
+
+<span class="nc" id="L200">                    } catch (Exception ignored) {}</span>
+<span class="nc" id="L201">                },</span>
+<span class="nc" id="L202">                error -&gt; Log.e(&quot;CHAT-HISTORY&quot;, &quot;GET FAILED: &quot; + error)); //error handling</span>
+
+<span class="nc" id="L204">        Volley.newRequestQueue(this).add(req); //add to queue</span>
+<span class="nc" id="L205">    }</span>
+
+
+
+    /**
+     * Called when activity becomes visible. (user in chat room)
+     * Connects to WebSocket and sets WebSocket listener.
+     */
+    @Override
+    protected void onStart() {
+<span class="nc" id="L215">        super.onStart();</span>
+
+        EventWebSocketManager
+<span class="nc" id="L218">                .getInstance()</span>
+<span class="nc" id="L219">                .setWebSocketListener(this);</span>
+
+<span class="nc" id="L221">        String wsUrl =</span>
+                &quot;ws://coms-3090-016.class.las.iastate.edu:8080/chat/&quot;
+                        + chatroomId + &quot;/&quot; + userId;
+
+        // Connect to WebSocket room
+<span class="nc" id="L226">        EventWebSocketManager.getInstance().connect(wsUrl);</span>
+<span class="nc" id="L227">        setStatus(false); // show disconnected until onWebSocketOpen fires</span>
+<span class="nc" id="L228">    }</span>
+
+    /**
+     * Called when activity is no longer visible. (user no longer in chat room)
+     * Closes WebSocket and removes listener to avoid leaks.
+     */
+    @Override
+    protected void onStop() {
+<span class="nc" id="L236">        EventWebSocketManager.getInstance().close();</span>
+<span class="nc" id="L237">        EventWebSocketManager.getInstance().removeWebSocketListener();</span>
+<span class="nc" id="L238">        super.onStop();</span>
+<span class="nc" id="L239">    }</span>
+
+    /**
+     * Updates the status dot (green = connected, red = disconnected).
+     */
+    private void setStatus(boolean connected) {
+<span class="nc" id="L245">        statusDot.setBackgroundResource(</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                connected //if connected green, else red</span>
+<span class="nc" id="L247">                        ? R.drawable.shape_status_dot_connected</span>
+<span class="nc" id="L248">                        : R.drawable.shape_status_dot_disconnected</span>
+        );
+<span class="nc" id="L250">    }</span>
+
+
+
+    /**
+     * Called when WebSocket successfully connects.
+     */
+    @Override
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+<span class="nc" id="L259">        runOnUiThread(() -&gt; setStatus(true));</span>
+<span class="nc" id="L260">    }</span>
+
+    /**
+     * Called when a message is received through WebSocket.
+     * - Splits multi-line messages
+     * - Filters join/leave system messages
+     * - Parses &quot;sender: message&quot; format
+     */
+    @Override
+    public void onWebSocketMessage(String msg) {
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (msg == null) return; // ignore empty messages</span>
+
+        // WebSocket delivers messages on a background thread → switch to UI thread
+<span class="nc" id="L273">        runOnUiThread(() -&gt; {</span>
+
+<span class="nc" id="L275">            String[] lines = msg.split(&quot;\n&quot;); // handle multi-line messages</span>
+
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            for (String raw : lines) {</span>
+
+<span class="nc" id="L279">                raw = raw.trim();</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                if (raw.isEmpty()) continue;</span>
+
+                // Skip system join/leave notifications
+<span class="nc bnc" id="L283" title="All 2 branches missed.">                if (raw.contains(&quot;Joined the Chat&quot;) ||</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">                        raw.contains(&quot;Left the Chat&quot;))</span>
+<span class="nc" id="L285">                    continue;</span>
+
+                // Expect format: &quot;Sender: message&quot;
+<span class="nc" id="L288">                int index = raw.indexOf(&quot;:&quot;);</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                if (index &lt; 1) continue; // if no sender found, ignore</span>
+
+<span class="nc" id="L291">                String sender = raw.substring(0, index).trim();</span>
+<span class="nc" id="L292">                String text   = raw.substring(index + 1).trim();</span>
+
+                // Fix duplicate prefix cases: &quot;name: name: hi&quot;
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                if (text.startsWith(sender + &quot;:&quot;))</span>
+<span class="nc" id="L296">                    text = text.substring(sender.length() + 1).trim();</span>
+
+<span class="nc" id="L298">                boolean isMe = sender.equalsIgnoreCase(displayName);</span>
+
+<span class="nc" id="L300">                adapter.add(new ChatMessage(</span>
+                        text,
+<span class="nc bnc" id="L302" title="All 2 branches missed.">                        isMe ? displayName : sender,</span>
+<span class="nc" id="L303">                        System.currentTimeMillis()</span>
+                ));
+            }
+
+<span class="nc" id="L307">            messagesRv.scrollToPosition(adapter.getItemCount() - 1);</span>
+<span class="nc" id="L308">        });</span>
+<span class="nc" id="L309">    }</span>
+
+
+    /**
+     * Called when WebSocket connection closes.
+     */
+    @Override
+    public void onWebSocketClose(int code, String reason, boolean remote) {
+<span class="nc" id="L317">        runOnUiThread(() -&gt; setStatus(false));</span>
+<span class="nc" id="L318">    }</span>
+
+    /**
+     * Called when a WebSocket error occurs.
+     */
+    @Override
+    public void onWebSocketError(Exception ex) {
+<span class="nc" id="L325">        runOnUiThread(() -&gt; setStatus(false));</span>
+<span class="nc" id="L326">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

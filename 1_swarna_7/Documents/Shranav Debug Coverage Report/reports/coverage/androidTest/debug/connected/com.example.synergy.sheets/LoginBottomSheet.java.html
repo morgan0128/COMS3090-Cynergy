@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginBottomSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">LoginBottomSheet.java</span></div><h1>LoginBottomSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.TestFlags;
+import com.example.synergy.activities.HomeActivity;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.WebSocketService;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="fc" id="L31">public class LoginBottomSheet extends BottomSheetDialogFragment {</span>
+
+    private Button LogInButton;
+
+    private EditText email;
+    private EditText password;
+
+
+//    Creates the login sheet when app is loaded but doesn't display on screen yet
+    @Nullable
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState){
+<span class="fc" id="L44">        View root = inflater.inflate(R.layout.bottom_sheet_login, container, false);</span>
+
+//        Button code to switch to the Signup sheet
+<span class="fc" id="L47">        Button btnGoToSignup = root.findViewById(R.id.go_to_signup);</span>
+<span class="fc" id="L48">        btnGoToSignup.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L49">            dismiss(); // close login drawer</span>
+<span class="nc" id="L50">            new SignupBottomSheet().show(getParentFragmentManager(), &quot;SignupSheet&quot;);</span>
+<span class="nc" id="L51">        });</span>
+
+<span class="fc" id="L53">        LogInButton = root.findViewById(R.id.btnLogin);</span>
+<span class="fc" id="L54">        email = (root.findViewById(R.id.etEmail));</span>
+<span class="fc" id="L55">        password = (root.findViewById(R.id.etPassword));</span>
+
+
+//        When clicked we should log in
+<span class="fc" id="L59">        LogInButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+//            We should either get back data from request and log in
+//                or we should error out
+
+<span class="fc" id="L65">                String emailString = email.getText().toString();</span>
+<span class="fc" id="L66">                String passwordString = password.getText().toString();</span>
+<span class="fc" id="L67">                LogInButton.setEnabled(false);</span>
+                try {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                    if (TestFlags.TEST_MODE) {</span>
+                        // Skip Volley and force navigation
+<span class="nc" id="L71">                        Intent i = new Intent(requireContext(), HomeActivity.class);</span>
+<span class="nc" id="L72">                        startActivity(i);</span>
+<span class="nc" id="L73">                        return;</span>
+                    }
+
+<span class="fc" id="L76">                    makeLoginReq(emailString, passwordString);</span>
+<span class="nc" id="L77">                } catch (Exception e) {</span>
+<span class="nc" id="L78">                    throw new RuntimeException(e);</span>
+                } finally {
+<span class="fc" id="L80">                    LogInButton.setEnabled(true);</span>
+                }
+
+
+<span class="fc" id="L84">            }</span>
+        });
+
+<span class="fc" id="L87">        return root;</span>
+    }
+
+
+    //    Function that makes the string response to the server
+    private void makeLoginReq(String emailString, String passwordString)  {
+
+<span class="fc" id="L94">        String URL_STRING_REQ = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/login&quot;;</span>
+<span class="fc" id="L95">        JSONObject loginObject = new JSONObject();</span>
+        try{
+<span class="fc" id="L97">            loginObject.put(&quot;emailId&quot;, emailString);</span>
+<span class="fc" id="L98">            loginObject.put(&quot;userPassword&quot;, passwordString);</span>
+<span class="nc" id="L99">        } catch (JSONException e){</span>
+<span class="nc" id="L100">            showStatusDialog(&quot;Error&quot;, &quot;Invalid Login Data&quot;);</span>
+<span class="fc" id="L101">        }</span>
+
+
+
+<span class="fc" id="L105">        JsonObjectRequest loginRequest = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                URL_STRING_REQ,
+                loginObject,
+<span class="fc" id="L109">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject responseObject) {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                        if (!isAdded()) return;</span>
+<span class="fc" id="L113">                        handleLoginSuccess(responseObject, passwordString);</span>
+<span class="fc" id="L114">                    }</span>
+                },
+<span class="fc" id="L116">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                        if (!isAdded()) return;</span>
+
+<span class="nc" id="L121">                        handleLoginError(volleyError);</span>
+<span class="nc" id="L122">                    }</span>
+                }
+        );
+
+
+        // Adding request to the Volley request queue
+//        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(stringRequest);
+//        For bottomSheetDialogFragment we need to do this:
+<span class="fc" id="L130">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(loginRequest);</span>
+
+<span class="fc" id="L132">    }</span>
+
+    private void handleLoginSuccess(JSONObject responseObject, String password){
+
+        try {
+
+<span class="fc" id="L138">            int userId = responseObject.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L139">            Intent serviceIntent = new Intent(requireContext(), WebSocketService.class);</span>
+<span class="fc" id="L140">            serviceIntent.setAction(&quot;CONNECT&quot;);</span>
+<span class="fc" id="L141">            serviceIntent.putExtra(&quot;url&quot;, &quot;ws://coms-3090-016.class.las.iastate.edu:8080/ws/notifications/&quot; + userId);</span>
+<span class="fc" id="L142">            serviceIntent.putExtra(&quot;key&quot;, &quot;notifications&quot;);</span>
+<span class="fc" id="L143">            requireContext().startService(serviceIntent);</span>
+
+//           We successfully log  in
+<span class="fc" id="L146">            Intent intent = new Intent(getActivity(), HomeActivity.class);</span>
+<span class="fc" id="L147">            intent.putExtra(&quot;response&quot;, responseObject.toString());</span>
+<span class="fc" id="L148">            intent.putExtra(&quot;password&quot;, password);</span>
+<span class="fc" id="L149">            startActivity(intent);</span>
+
+<span class="nc" id="L151">        } catch (JSONException e) {</span>
+<span class="nc" id="L152">            throw new RuntimeException(e);</span>
+<span class="fc" id="L153">        }</span>
+<span class="fc" id="L154">    }</span>
+
+    private void handleLoginError(VolleyError err){
+<span class="nc" id="L157">        Log.e(&quot;Volley Error&quot;, err.toString());</span>
+
+//      If any error occurs during login attempt show this message
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (email.getText().toString().isEmpty() &amp; password.getText().toString().isEmpty()){</span>
+<span class="nc" id="L162">            showStatusDialog(&quot;Log In Error&quot;,&quot;Empty Field, Please enter email and password&quot;);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        }else if (password.getText().toString().isEmpty()){</span>
+<span class="nc" id="L164">            showStatusDialog(&quot;Log In Error&quot;,&quot;Empty Field, Please enter your Password&quot;);</span>
+<span class="nc" id="L165">            return;</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        }else if (email.getText().toString().isEmpty()){</span>
+<span class="nc" id="L167">        showStatusDialog(&quot;Log In Error&quot;,&quot;Empty Field, Please enter your Email&quot;);</span>
+<span class="nc" id="L168">            return;</span>
+        }
+        else {
+<span class="nc" id="L171">            showStatusDialog(&quot;Log In Error&quot;,err.toString());</span>
+        }
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (email != null) email.setText(&quot;&quot;);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (password!= null) password.setText(&quot;&quot;);</span>
+<span class="nc" id="L175">    }</span>
+
+
+    //    Function that helps to show a status dialog
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L180">        requireActivity().runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L181">            new AlertDialog.Builder(requireActivity())</span>
+<span class="nc" id="L182">                    .setTitle(title)</span>
+<span class="nc" id="L183">                    .setMessage(message)</span>
+<span class="nc" id="L184">                    .setPositiveButton(&quot;OK&quot;, null)</span>
+<span class="nc" id="L185">                    .show();</span>
+<span class="nc" id="L186">        });</span>
+<span class="nc" id="L187">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>eventMapFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">eventMapFragment.java</span></div><h1>eventMapFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
+
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.sheets.mapEventListSheet;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+
+<span class="fc" id="L42">public class eventMapFragment extends Fragment{</span>
+
+
+    private MapView mapView;
+
+    private  String userDetailString;
+
+    @SuppressLint(&quot;ClickableViewAccessibility&quot;)
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+<span class="fc" id="L56">        setupOSMDroid();</span>
+<span class="fc" id="L57">        View view = inflater.inflate(R.layout.fragment_event_map, container, false);</span>
+<span class="fc" id="L58">        Bundle args = getArguments();</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (args != null) {</span>
+<span class="fc" id="L60">          userDetailString = args.getString(&quot;userDetails&quot;);</span>
+        }
+
+
+<span class="fc" id="L64">        setupMap(view);</span>
+
+
+//        Prevent ViewPager swipe conflicts
+<span class="fc" id="L68">        mapView.setOnTouchListener((v, event) -&gt; {</span>
+<span class="nc" id="L69">            v.getParent().requestDisallowInterceptTouchEvent(true);</span>
+<span class="nc" id="L70">            return false;</span>
+        });
+
+
+
+
+<span class="fc" id="L76">        fetchAndDisplayEvents();</span>
+
+<span class="fc" id="L78">        return view;</span>
+    }
+
+
+    private void setupMap(View view){
+        //         Initialize map view
+<span class="fc" id="L84">        mapView = view.findViewById(R.id.map);</span>
+<span class="fc" id="L85">        mapView.setTileSource(TileSourceFactory.MAPNIK);</span>
+<span class="fc" id="L86">        mapView.setMultiTouchControls(true);</span>
+
+
+<span class="fc" id="L89">        GeoPoint ames = new GeoPoint(42.02365, -93.64585);</span>
+<span class="fc" id="L90">        mapView.getController().setZoom(18.0);</span>
+<span class="fc" id="L91">        mapView.getController().setCenter(ames);</span>
+<span class="fc" id="L92">    }</span>
+
+    private void setupOSMDroid(){
+        // Configure osmdroid properly (load + cache directory)
+<span class="fc" id="L96">        Configuration.getInstance().load(requireContext(),</span>
+<span class="fc" id="L97">                PreferenceManager.getDefaultSharedPreferences(requireContext()));</span>
+<span class="fc" id="L98">        Configuration.getInstance().setUserAgentValue(requireContext().getPackageName());</span>
+<span class="fc" id="L99">        Configuration.getInstance().setOsmdroidBasePath(</span>
+<span class="fc" id="L100">                new File(requireContext().getCacheDir().getAbsolutePath(), &quot;osmdroid&quot;));</span>
+<span class="fc" id="L101">        Configuration.getInstance().setOsmdroidTileCache(</span>
+<span class="fc" id="L102">                new File(requireContext().getCacheDir().getAbsolutePath(), &quot;osmdroid/tiles&quot;));</span>
+
+<span class="fc" id="L104">    }</span>
+
+    /**
+     * Functions to dictate what happens when we resume, pause and destroy Map
+     */
+    @Override
+    public void onResume() {
+<span class="fc" id="L111">        super.onResume();</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (mapView != null) {</span>
+<span class="fc" id="L113">            mapView.onResume();</span>
+<span class="fc" id="L114">            mapView.getController().setCenter(new GeoPoint(42.02365</span>
+                    , -93.64585)); // Reset view center
+<span class="fc" id="L116">            mapView.invalidate(); //  Force redraw</span>
+        }
+
+<span class="fc" id="L119">        fetchAndDisplayEvents();</span>
+
+<span class="fc" id="L121">    }</span>
+
+    @Override
+    public void onPause() {
+<span class="fc" id="L125">        super.onPause();</span>
+<span class="fc" id="L126">        mapView.onPause();</span>
+<span class="fc" id="L127">    }</span>
+
+    @Override
+    public void onDestroyView() {
+<span class="fc" id="L131">        super.onDestroyView();</span>
+<span class="fc" id="L132">        mapView = null;</span>
+<span class="fc" id="L133">    }</span>
+
+
+
+
+    private void fetchAndDisplayEvents() {
+<span class="fc" id="L139">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/map/node/all&quot;;</span>
+
+<span class="fc" id="L141">        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,</span>
+                response -&gt; {
+                    try {
+<span class="fc" id="L144">                        handleMapNodePopulation(response);</span>
+<span class="nc" id="L145">                    } catch (Exception e) {</span>
+<span class="nc" id="L146">                        Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L147">                        Toast.makeText(requireContext(), &quot;Error parsing events&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L148">                    }</span>
+<span class="fc" id="L149">                },</span>
+                error -&gt; {
+<span class="nc" id="L151">                    Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L152">                    Toast.makeText(requireContext(), error.toString(), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L153">                });</span>
+
+<span class="fc" id="L155">        VolleySingleton.getInstance(getContext()).addToRequestQueue(jsonArrayRequest);</span>
+<span class="fc" id="L156">    }</span>
+
+
+<span class="fc" id="L159">    private final Map&lt;Integer, Marker&gt; markerMap = new HashMap&lt;&gt;();</span>
+    private void handleMapNodePopulation(JSONArray response) throws JSONException {
+<span class="fc" id="L161">        Set&lt;Integer&gt; updatedNodeIds = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="fc" id="L163">            JSONObject obj = response.getJSONObject(i);</span>
+<span class="fc" id="L164">            int mapNodeId = obj.getInt(&quot;map_node_id&quot;);</span>
+<span class="fc" id="L165">            updatedNodeIds.add(mapNodeId);</span>
+
+<span class="fc" id="L167">            double lat = obj.getDouble(&quot;latitude&quot;);</span>
+<span class="fc" id="L168">            double lon = obj.getDouble(&quot;longitude&quot;);</span>
+<span class="fc" id="L169">            String description = obj.optString(&quot;description&quot;, &quot;No description&quot;);</span>
+<span class="fc" id="L170">            JSONArray associatedEvents = obj.getJSONArray(&quot;events&quot;);</span>
+
+            Marker marker;
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            if (markerMap.containsKey(mapNodeId)) {</span>
+<span class="fc" id="L174">                marker = markerMap.get(mapNodeId);</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                assert marker != null;</span>
+<span class="fc" id="L176">                marker.setPosition(new GeoPoint(lat, lon));</span>
+<span class="fc" id="L177">                marker.setSnippet(description);</span>
+            } else {
+<span class="fc" id="L179">                marker = new Marker(mapView);</span>
+<span class="fc" id="L180">                marker.setPosition(new GeoPoint(lat, lon));</span>
+<span class="fc" id="L181">                marker.setSnippet(description);</span>
+<span class="fc" id="L182">                marker.setOnMarkerClickListener((m, mapView1) -&gt; {</span>
+<span class="nc" id="L183">                    mapEventListSheet bottomSheet = mapEventListSheet.newInstance(</span>
+                            associatedEvents, userDetailString, mapNodeId);
+<span class="nc" id="L185">                    bottomSheet.show(getParentFragmentManager(), &quot;mapEventListSheet&quot;);</span>
+<span class="nc" id="L186">                    return true;</span>
+                });
+<span class="fc" id="L188">                mapView.getOverlays().add(marker);</span>
+<span class="fc" id="L189">                markerMap.put(mapNodeId, marker);</span>
+            }
+        }
+
+        // Remove markers no longer in response
+<span class="fc" id="L194">        markerMap.keySet().removeIf(id -&gt; {</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">            if (!updatedNodeIds.contains(id)) {</span>
+<span class="nc" id="L196">                mapView.getOverlays().remove(markerMap.get(id));</span>
+<span class="nc" id="L197">                return true;</span>
+            }
+<span class="fc" id="L199">            return false;</span>
+        });
+
+<span class="fc" id="L202">        mapView.invalidate();</span>
+
+<span class="fc" id="L204">    }</span>
+
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L207">        new androidx.appcompat.app.AlertDialog.Builder(requireContext())</span>
+<span class="nc" id="L208">                .setTitle(title)</span>
+<span class="nc" id="L209">                .setMessage(message)</span>
+<span class="nc" id="L210">                .setCancelable(false)</span>
+<span class="nc" id="L211">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L212">                .show();</span>
+<span class="nc" id="L213">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

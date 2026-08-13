@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminDashboardActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">AdminDashboardActivity.java</span></div><h1>AdminDashboardActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.AdminUserAdapter;
+import com.example.synergy.items.AdminUser;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+<span class="nc" id="L25">public class AdminDashboardActivity extends AppCompatActivity implements AdminUserAdapter.OnUserClick {</span>
+
+    private RecyclerView recycler;
+    private ProgressBar loading;
+    private TextView empty;
+
+<span class="nc" id="L31">    private final ArrayList&lt;AdminUser&gt; users = new ArrayList&lt;&gt;();</span>
+    private AdminUserAdapter adapter;
+
+    private static final String BASE = &quot;http://coms-3090-016.class.las.iastate.edu:8080&quot;;
+
+<span class="nc" id="L36">    private final int superAdminId = 1;</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L40">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L41">        setContentView(R.layout.activity_admin_dashboard);</span>
+
+<span class="nc" id="L43">        recycler = findViewById(R.id.usersRecycler);</span>
+<span class="nc" id="L44">        loading = findViewById(R.id.loading);</span>
+<span class="nc" id="L45">        empty = findViewById(R.id.emptyView);</span>
+
+<span class="nc" id="L47">        findViewById(R.id.back_button).setOnClickListener(v -&gt; finish());</span>
+
+<span class="nc" id="L49">        adapter = new AdminUserAdapter(users, this);</span>
+<span class="nc" id="L50">        recycler.setLayoutManager(new LinearLayoutManager(this));</span>
+<span class="nc" id="L51">        recycler.setAdapter(adapter);</span>
+<span class="nc" id="L52">    }</span>
+
+    @Override
+    protected void onResume() {
+<span class="nc" id="L56">        super.onResume();</span>
+<span class="nc" id="L57">        fetchAllUsers();</span>
+<span class="nc" id="L58">    }</span>
+
+    private void fetchAllUsers() {
+<span class="nc" id="L61">        loading.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L63">        String url = BASE + &quot;/api/accounts&quot;;</span>
+
+<span class="nc" id="L65">        StringRequest req = new StringRequest(</span>
+                Request.Method.GET, url,
+                this::parseBasicUsers,
+                err -&gt; {
+<span class="nc" id="L69">                    loading.setVisibility(View.GONE);</span>
+<span class="nc" id="L70">                    empty.setText(&quot;Failed to load users&quot;);</span>
+<span class="nc" id="L71">                    empty.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L72">                }</span>
+        );
+
+<span class="nc" id="L75">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L76">    }</span>
+
+     public void parseBasicUsers(String resp) {
+<span class="nc" id="L79">        users.clear();</span>
+
+        try {
+<span class="nc" id="L82">            JSONArray arr = new JSONArray(resp);</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L85">                JSONObject o = arr.getJSONObject(i);</span>
+
+<span class="nc" id="L87">                int id = o.getInt(&quot;id&quot;);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                if (id == superAdminId) continue;</span>
+
+<span class="nc" id="L90">                String name = o.optString(&quot;username&quot;, &quot;(no name)&quot;);</span>
+<span class="nc" id="L91">                String email = o.optString(&quot;email&quot;, &quot;&quot;);</span>
+
+                // TEMP tier = 0 until we fetch real permissions
+<span class="nc" id="L94">                AdminUser u = new AdminUser(id, name, email, 0);</span>
+<span class="nc" id="L95">                users.add(u);</span>
+            }
+<span class="nc" id="L97">        } catch (Exception e) {</span>
+<span class="nc" id="L98">            e.printStackTrace();</span>
+<span class="nc" id="L99">        }</span>
+
+<span class="nc" id="L101">        adapter.notifyDataSetChanged();</span>
+
+        // Now fetch REAL permissions for each user
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        for (AdminUser u : users) {</span>
+<span class="nc" id="L105">            fetchRealPermissions(u);</span>
+<span class="nc" id="L106">        }</span>
+
+<span class="nc" id="L108">        loading.setVisibility(View.GONE);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        empty.setVisibility(users.isEmpty() ? View.VISIBLE : View.GONE);</span>
+<span class="nc" id="L110">    }</span>
+
+    private void fetchRealPermissions(AdminUser u) {
+<span class="nc" id="L113">        String url1 = BASE + &quot;/api/is/admin/&quot; + u.getId();</span>
+
+<span class="nc" id="L115">        StringRequest req1 = new StringRequest(Request.Method.GET, url1,</span>
+                resp -&gt; {
+<span class="nc" id="L117">                    boolean isAdmin = Boolean.parseBoolean(resp.trim());</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                    if (!isAdmin) {</span>
+<span class="nc" id="L119">                        u.setTier(0);</span>
+<span class="nc" id="L120">                        adapter.notifyDataSetChanged();</span>
+                    } else {
+<span class="nc" id="L122">                        u.setTier(1);</span>
+<span class="nc" id="L123">                        fetchTier2Status(u);</span>
+                    }
+<span class="nc" id="L125">                },</span>
+<span class="nc" id="L126">                err -&gt; Log.e(&quot;Admin&quot;, &quot;isAdmin failed for &quot; + u.getId())</span>
+        );
+
+<span class="nc" id="L129">        VolleySingleton.getInstance(this).addToRequestQueue(req1);</span>
+<span class="nc" id="L130">    }</span>
+
+    private void fetchTier2Status(AdminUser u) {
+<span class="nc" id="L133">        String url = BASE + &quot;/api/is/adminT2/&quot; + u.getId();</span>
+
+<span class="nc" id="L135">        StringRequest req2 = new StringRequest(Request.Method.GET, url,</span>
+                resp -&gt; {
+<span class="nc" id="L137">                    boolean t2 = Boolean.parseBoolean(resp.trim());</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                    if (t2) u.setTier(2);</span>
+<span class="nc" id="L139">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L140">                },</span>
+<span class="nc" id="L141">                err -&gt; Log.e(&quot;Admin&quot;, &quot;tier2 check failed for id &quot; + u.getId())</span>
+        );
+
+<span class="nc" id="L144">        VolleySingleton.getInstance(this).addToRequestQueue(req2);</span>
+<span class="nc" id="L145">    }</span>
+
+    @Override
+    public void onUserClicked(AdminUser user) {
+<span class="nc" id="L149">        AdminUserDetailActivity.start(this, user.getId());</span>
+<span class="nc" id="L150">    }</span>
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FriendChatActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">FriendChatActivity.java</span></div><h1>FriendChatActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.synergy.EventWebSocketListener;
+import com.example.synergy.EventWebSocketManager;
+import com.example.synergy.R;
+import com.example.synergy.adapters.ChatAdapter;
+import com.example.synergy.items.ChatMessage;
+
+import org.java_websocket.handshake.ServerHandshake;
+
+<span class="fc" id="L25">public class FriendChatActivity extends AppCompatActivity implements EventWebSocketListener {</span>
+
+    private ImageButton backButton;
+
+    private ChatAdapter adapter;
+    private ImageButton sendButton;
+    private RecyclerView messagesRv;
+    private String displayName;
+    private EditText msgEdt;
+    private int userId;
+    private int chatroomId;
+    private View statusDot;
+    private TextView titleTv;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L41">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L42">        EdgeToEdge.enable(this);</span>
+<span class="fc" id="L43">        setContentView(R.layout.activity_friend_chat);</span>
+<span class="fc" id="L44">        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.friend_chat_root), (v, insets) -&gt; {</span>
+<span class="fc" id="L45">            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="fc" id="L46">            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="fc" id="L47">            return insets;</span>
+        });
+
+<span class="fc" id="L50">        setupUI();</span>
+
+<span class="fc" id="L52">        Bundle extras = getIntent().getExtras();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        assert extras != null;</span>
+<span class="fc" id="L54">        titleTv.setText(extras.getString(&quot;friend_name&quot;));</span>
+<span class="fc" id="L55">        chatroomId = extras.getInt(&quot;chatroom_id&quot;);</span>
+<span class="fc" id="L56">        userId = extras.getInt(&quot;userId&quot;);</span>
+
+<span class="fc" id="L58">        adapter = new ChatAdapter();</span>
+
+<span class="fc" id="L60">        LinearLayoutManager lm =</span>
+                new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
+
+<span class="fc" id="L63">        messagesRv.setLayoutManager(lm);</span>
+<span class="fc" id="L64">        messagesRv.setAdapter(adapter);</span>
+
+<span class="fc" id="L66">        handleButtonClicks();</span>
+
+<span class="fc" id="L68">    }</span>
+
+    private void setupUI(){
+<span class="fc" id="L71">        backButton = findViewById(R.id.backbuttonToHome);</span>
+<span class="fc" id="L72">        sendButton = findViewById(R.id.sendBtn);</span>
+<span class="fc" id="L73">        msgEdt = findViewById(R.id.msgEdt);</span>
+<span class="fc" id="L74">        titleTv = findViewById(R.id.titleTv);</span>
+<span class="fc" id="L75">        messagesRv = findViewById(R.id.messagesRv);</span>
+<span class="fc" id="L76">        statusDot  = findViewById(R.id.statusDot);</span>
+<span class="fc" id="L77">    }</span>
+
+    private void handleButtonClicks(){
+<span class="fc" id="L80">        backButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L83">                finish();</span>
+<span class="nc" id="L84">            }</span>
+        });
+
+<span class="fc" id="L87">        sendButton.setOnClickListener(new View.OnClickListener(){</span>
+
+            @Override
+            public void onClick(View v) {
+<span class="fc" id="L91">                String txt = msgEdt.getText().toString().trim(); //trimming the text</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                if (txt.isEmpty()) return;</span>
+
+                // Send message through WebSocket
+<span class="fc" id="L95">                EventWebSocketManager.getInstance().send(txt);</span>
+<span class="fc" id="L96">                msgEdt.setText(&quot;&quot;);  // clear text field after sending</span>
+<span class="fc" id="L97">            }</span>
+        });
+<span class="fc" id="L99">    }</span>
+
+    /**
+     * Updates the status dot (green = connected, red = disconnected).
+     */
+    private void setStatus(boolean connected) {
+<span class="fc" id="L105">        statusDot.setBackgroundResource(</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                connected //if connected green, else red</span>
+<span class="fc" id="L107">                        ? R.drawable.shape_status_dot_connected</span>
+<span class="fc" id="L108">                        : R.drawable.shape_status_dot_disconnected</span>
+        );
+<span class="fc" id="L110">    }</span>
+
+
+
+    /**
+     * Called when activity becomes visible. (user in chat room)
+     * Connects to WebSocket and sets WebSocket listener.
+     */
+    @Override
+    protected void onStart() {
+<span class="fc" id="L120">        super.onStart();</span>
+
+        EventWebSocketManager
+<span class="fc" id="L123">                .getInstance()</span>
+<span class="fc" id="L124">                .setWebSocketListener(this);</span>
+
+<span class="fc" id="L126">        String wsUrl =</span>
+                &quot;ws://coms-3090-016.class.las.iastate.edu:8080/chat/&quot;
+                        + chatroomId + &quot;/&quot; + userId;
+
+        // Connect to WebSocket room
+<span class="fc" id="L131">        EventWebSocketManager.getInstance().connect(wsUrl);</span>
+<span class="fc" id="L132">        setStatus(false); // show disconnected until onWebSocketOpen fires</span>
+<span class="fc" id="L133">    }</span>
+
+    /**
+     * Called when activity is no longer visible. (user no longer in chat room)
+     * Closes WebSocket and removes listener to avoid leaks.
+     */
+    @Override
+    protected void onStop() {
+<span class="fc" id="L141">        EventWebSocketManager.getInstance().close();</span>
+<span class="fc" id="L142">        EventWebSocketManager.getInstance().removeWebSocketListener();</span>
+<span class="fc" id="L143">        super.onStop();</span>
+<span class="fc" id="L144">    }</span>
+
+
+
+    @Override
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+<span class="fc" id="L150">        runOnUiThread(() -&gt; setStatus(true));</span>
+<span class="fc" id="L151">    }</span>
+
+    @Override
+    public void onWebSocketMessage(String msg) {
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (msg == null) return; // ignore empty messages</span>
+
+        // WebSocket delivers messages on a background thread → switch to UI thread
+<span class="fc" id="L158">        runOnUiThread(() -&gt; {</span>
+
+<span class="fc" id="L160">            String[] lines = msg.split(&quot;\n&quot;); // handle multi-line messages</span>
+
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            for (String raw : lines) {</span>
+
+<span class="fc" id="L164">                raw = raw.trim();</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">                if (raw.isEmpty()) continue;</span>
+
+                // Skip system join/leave notifications
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (raw.contains(&quot;Joined the Chat&quot;) ||</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                        raw.contains(&quot;Left the Chat&quot;))</span>
+<span class="nc" id="L170">                    continue;</span>
+
+                // Expect format: &quot;Sender: message&quot;
+<span class="fc" id="L173">                int index = raw.indexOf(&quot;:&quot;);</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                if (index &lt; 1) continue; // if no sender found, ignore</span>
+
+<span class="fc" id="L176">                String sender = raw.substring(0, index).trim();</span>
+<span class="fc" id="L177">                String text   = raw.substring(index + 1).trim();</span>
+
+                // Fix duplicate prefix cases: &quot;name: name: hi&quot;
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                if (text.startsWith(sender + &quot;:&quot;))</span>
+<span class="fc" id="L181">                    text = text.substring(sender.length() + 1).trim();</span>
+
+<span class="fc" id="L183">                boolean isMe = sender.equalsIgnoreCase(displayName);</span>
+
+<span class="fc" id="L185">                adapter.add(new ChatMessage(</span>
+                        text,
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">                        isMe ? displayName : sender,</span>
+<span class="fc" id="L188">                        System.currentTimeMillis()</span>
+                ));
+            }
+
+<span class="fc" id="L192">            messagesRv.scrollToPosition(adapter.getItemCount() - 1);</span>
+<span class="fc" id="L193">        });</span>
+<span class="fc" id="L194">    }</span>
+
+    @Override
+    public void onWebSocketClose(int code, String reason, boolean remote) {
+<span class="fc" id="L198">        runOnUiThread(() -&gt; setStatus(false));</span>
+<span class="fc" id="L199">    }</span>
+
+    @Override
+    public void onWebSocketError(Exception ex) {
+<span class="nc" id="L203">        runOnUiThread(() -&gt; setStatus(false));</span>
+<span class="nc" id="L204">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

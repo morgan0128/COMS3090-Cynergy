@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">MainActivity.java</span></div><h1>MainActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.os.Bundle;
+import android.widget.Button;
+import android.os.Handler;
+
+import android.view.View;
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.splashscreen.SplashScreen;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.example.synergy.R;
+import com.example.synergy.sheets.LoginBottomSheet;
+import com.example.synergy.sheets.SignupBottomSheet;
+
+<span class="fc" id="L19">public class MainActivity extends AppCompatActivity {</span>
+
+<span class="fc" id="L21">    private boolean isAppReady = false; // flag that controls when to end splash screen</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        // attaching splash theme to this activity, and controlling it
+<span class="fc" id="L27">        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);</span>
+
+<span class="fc" id="L29">        super.onCreate(savedInstanceState);</span>
+
+        //decides when splashscreen should end displaying based on boolean
+<span class="fc" id="L32">        splashScreen.setKeepOnScreenCondition(() -&gt;</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            !isAppReady</span>
+        );
+
+        //listens when splashScreen is about to exit
+<span class="fc" id="L37">        splashScreen.setOnExitAnimationListener(splashView -&gt; {</span>
+            //gets the splash View object
+<span class="fc" id="L39">            View view = splashView.getView();</span>
+
+<span class="fc" id="L41">            view.animate()</span>
+<span class="fc" id="L42">                    .translationY(-view.getHeight()) //slides the splash screen completely off the screen, slides upwards</span>
+<span class="fc" id="L43">                    .alpha(0f) //fades out</span>
+<span class="fc" id="L44">                    .setDuration(700L) //duration of 0.5s</span>
+<span class="fc" id="L45">                    .withEndAction(splashView::remove) //removes splash completely</span>
+<span class="fc" id="L46">                    .start(); //starts animation</span>
+<span class="fc" id="L47">        });</span>
+
+
+
+
+        //2 seconds timer for splash screen, placeholder for now
+<span class="fc" id="L53">        new Handler().postDelayed(() -&gt; {</span>
+<span class="fc" id="L54">            isAppReady = true;</span>
+<span class="fc" id="L55">        }, 1400);</span>
+
+//        Default Template
+<span class="fc" id="L58">        EdgeToEdge.enable(this);</span>
+<span class="fc" id="L59">        setContentView(R.layout.activity_main);</span>
+<span class="fc" id="L60">        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings_root), (v, insets) -&gt; {</span>
+<span class="fc" id="L61">            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="fc" id="L62">            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="fc" id="L63">            return insets;</span>
+        });
+
+
+//        Assigning Login and Signup buttons to variables
+<span class="fc" id="L68">        Button btnShowLogin = findViewById(R.id.button_login);</span>
+<span class="fc" id="L69">        Button btnShowSignup = findViewById(R.id.button_signup);</span>
+
+//        Setting onClick Listeners to buttons
+<span class="fc" id="L72">        btnShowLogin.setOnClickListener(v -&gt;{</span>
+//            The login sheet is already created during app init, on click displays the sheet
+<span class="fc" id="L74">            new LoginBottomSheet().show(getSupportFragmentManager(), &quot;LoginSheet&quot;);</span>
+<span class="fc" id="L75">        });</span>
+
+//        Same theory as the login button
+<span class="fc" id="L78">        btnShowSignup.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L79">            new SignupBottomSheet().show(getSupportFragmentManager(), &quot;SignupSheet&quot;);</span>
+<span class="fc" id="L80">        });</span>
+
+
+
+
+
+<span class="fc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

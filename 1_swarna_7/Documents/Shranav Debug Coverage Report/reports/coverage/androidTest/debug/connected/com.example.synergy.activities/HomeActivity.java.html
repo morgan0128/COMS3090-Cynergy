@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">HomeActivity.java</span></div><h1>HomeActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import android.util.Log;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.AdminUser;
+import com.example.synergy.items.Notifications;
+import com.example.synergy.sheets.ProfileBottomSheet;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+
+
+<span class="fc" id="L45">public class HomeActivity extends AppCompatActivity {</span>
+    private String response;
+<span class="fc" id="L47">    public final String GET_URL = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/profile/&quot;;</span>
+
+    public String email;
+
+    public int userId;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L56">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L57">        EdgeToEdge.enable(this);</span>
+<span class="fc" id="L58">        setContentView(R.layout.activity_home);</span>
+
+<span class="fc" id="L60">        Button settingButton = findViewById(R.id.settings);</span>
+<span class="fc" id="L61">        Button eventButton = findViewById(R.id.eventButton);</span>
+<span class="fc" id="L62">        TextView test_msg = findViewById(R.id.testView);</span>
+<span class="fc" id="L63">        Button createProfileButton = findViewById(R.id.create_profile_button);</span>
+<span class="fc" id="L64">        Button profileButton = findViewById(R.id.profileButton);</span>
+<span class="fc" id="L65">        Button notificationButton = findViewById(R.id.notification);</span>
+<span class="fc" id="L66">        Button friendsButton = findViewById(R.id.friendsButton);</span>
+<span class="fc" id="L67">        Button adminButton = findViewById(R.id.adminButton);</span>
+<span class="fc" id="L68">        Button eventInviteButton = findViewById(R.id.eventInviteButton);</span>
+<span class="fc" id="L69">        Bundle extras = getIntent().getExtras();</span>
+<span class="fc" id="L70">        Button fileRequestButton = findViewById(R.id.fileTicketButton);</span>
+<span class="fc" id="L71">        Button reviewsButton= findViewById(R.id.goToEventReviews);</span>
+
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        if (extras == null){</span>
+//            Login credentials didnt pass through, this is not supposed to happen
+//            critical error
+        } else {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (extras.containsKey(&quot;response&quot;)) {</span>
+//            Testing for passed extras
+<span class="fc" id="L79">                response = extras.getString(&quot;response&quot;);</span>
+
+//                showStatusDialog(&quot;response&quot;, response, true);
+<span class="fc" id="L82">                test_msg.setText(&quot;Welcome Back!&quot;);</span>
+
+                try {
+<span class="fc" id="L85">                    JSONObject jsonObject = new JSONObject(response);</span>
+<span class="fc" id="L86">                    email = jsonObject.optString(&quot;emailId&quot;, &quot;&quot;);</span>
+<span class="fc" id="L87">                    userId = jsonObject.optInt(&quot;id&quot;, -1);</span>
+
+<span class="nc" id="L89">                } catch (JSONException e) {</span>
+<span class="nc" id="L90">                    Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L91">                }</span>
+            }
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (extras.containsKey(&quot;email&quot;)){</span>
+<span class="nc" id="L94">                email = extras.getString(&quot;emailId&quot;);</span>
+            }
+
+
+        }
+
+
+<span class="fc" id="L101">        settingButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="fc" id="L104">                Intent intent = new Intent(HomeActivity.this, SettingsActivity.class);</span>
+<span class="fc" id="L105">                intent.putExtra(&quot;response&quot;, response);</span>
+<span class="fc" id="L106">                Log.d(&quot;response&quot;, response);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                assert extras != null;</span>
+<span class="fc" id="L108">                intent.putExtra(&quot;password&quot;, extras.getString(&quot;password&quot;));</span>
+
+<span class="fc" id="L110">                startActivity(intent);</span>
+<span class="fc" id="L111">            }</span>
+        });
+
+<span class="fc" id="L114">        eventButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L117">                Intent intent = new Intent(HomeActivity.this, EventsActivity.class);</span>
+<span class="nc" id="L118">                intent.putExtra(&quot;userDetails&quot;, response);</span>
+<span class="nc" id="L119">                startActivity(intent);</span>
+<span class="nc" id="L120">            }</span>
+        });
+
+<span class="fc" id="L123">        createProfileButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                if (getSupportFragmentManager().findFragmentByTag(&quot;ProfileSheet&quot;) == null) {</span>
+<span class="nc" id="L127">                    ProfileBottomSheet bottomSheet = ProfileBottomSheet.newInstance(userId);</span>
+<span class="nc" id="L128">                    bottomSheet.show(getSupportFragmentManager(), &quot;ProfileSheet&quot;);</span>
+<span class="nc" id="L129">                } else {</span>
+<span class="nc" id="L130">                    Log.d(&quot;BottomSheet&quot;, &quot;Already showing, skipping new one&quot;);</span>
+                }
+<span class="nc" id="L132">            }</span>
+        });
+
+
+<span class="fc" id="L136">        notificationButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="fc" id="L139">                Intent intent = new Intent(HomeActivity.this, Notifications.class);</span>
+<span class="fc" id="L140">                intent.putExtra(&quot;userDetails&quot;, response);</span>
+<span class="fc" id="L141">                startActivity(intent);</span>
+<span class="fc" id="L142">            }</span>
+        });
+
+<span class="fc" id="L145">        friendsButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L148">                Intent intent = new Intent(HomeActivity.this, FriendsActivity.class);</span>
+<span class="nc" id="L149">                intent.putExtra(&quot;userDetails&quot;, response);</span>
+<span class="nc" id="L150">                startActivity(intent);</span>
+
+
+<span class="nc" id="L153">            }</span>
+        });
+
+<span class="fc" id="L156">        eventInviteButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="fc" id="L159">                Intent intent = new Intent(HomeActivity.this, eventInviteActivity.class);</span>
+<span class="fc" id="L160">                intent.putExtra(&quot;userDetails&quot;, response);</span>
+
+<span class="fc" id="L162">                startActivity(intent);</span>
+<span class="fc" id="L163">            }</span>
+        });
+
+
+<span class="fc" id="L167">        profileButton.setOnClickListener(v -&gt; {</span>
+
+<span class="nc" id="L169">            sendServerReq(email);</span>
+<span class="nc" id="L170">        });</span>
+
+<span class="fc" id="L172">        reviewsButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L175">                Intent intent = new Intent(HomeActivity.this, EventReviewActivity.class);</span>
+<span class="nc" id="L176">                intent.putExtra(&quot;userDetails&quot;, response);</span>
+<span class="nc" id="L177">                startActivity(intent);</span>
+<span class="nc" id="L178">            }</span>
+        });
+
+
+        // Inside onCreate, after findViewById for the admin button:
+<span class="fc" id="L183">        Button adminBtn = findViewById(R.id.adminButton);</span>
+<span class="fc" id="L184">        adminBtn.setOnClickListener(v -&gt; {</span>
+            // TODO: Build this list from whatever data you already have in Home.
+<span class="nc" id="L186">            ArrayList&lt;AdminUser&gt; users = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L187">            users.add(new AdminUser(1, &quot;Professor G&quot;, &quot;professorG@gmail.com&quot;, 2));</span>
+
+<span class="nc" id="L189">            Intent i = new Intent(HomeActivity.this, AdminTicketActivity.class);</span>
+<span class="nc" id="L190">            i.putExtra(AdminTicketActivity.EXTRA_ADMIN_ID, userId);</span>
+<span class="nc" id="L191">            i.putExtra(&quot;users&quot;, users); // Serializable payload</span>
+<span class="nc" id="L192">            startActivity(i);</span>
+<span class="nc" id="L193">        });</span>
+
+
+<span class="fc" id="L196">        fileRequestButton.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L197">            Intent intent = new Intent(HomeActivity.this, TicketRequestActivity.class);</span>
+<span class="nc" id="L198">            intent.putExtra(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L199">            startActivity(intent);</span>
+<span class="nc" id="L200">        });</span>
+
+
+
+<span class="fc" id="L204">        View root = findViewById(R.id.home_root);</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (root != null) {</span>
+<span class="fc" id="L206">            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -&gt; {</span>
+<span class="fc" id="L207">                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="fc" id="L208">                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="fc" id="L209">                return insets;</span>
+            });
+        }
+
+
+<span class="fc" id="L214">    }</span>
+
+
+
+    private void sendServerReq(String email) {
+<span class="nc" id="L219">        String Full_URL = GET_URL + userId;</span>
+<span class="nc" id="L220">        Log.d(&quot;url&quot;, Full_URL);</span>
+
+<span class="nc" id="L222">        StringRequest stringRequest = new StringRequest(</span>
+                Request.Method.GET,
+                Full_URL,
+                response -&gt; {
+<span class="nc" id="L226">                    Log.d(&quot;Volley Response&quot;, response);</span>
+<span class="nc" id="L227">                    Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);</span>
+<span class="nc" id="L228">                    intent.putExtra(&quot;response&quot;, response);</span>
+<span class="nc" id="L229">                    intent.putExtra(&quot;email&quot;, email);</span>
+<span class="nc" id="L230">                    intent.putExtra(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L231">                    startActivity(intent);</span>
+<span class="nc" id="L232">                },</span>
+                error -&gt; {
+<span class="nc" id="L234">                    Log.e(&quot;Volley Error&quot;, error.toString());</span>
+<span class="nc" id="L235">                    showStatusDialog(false);</span>
+<span class="nc" id="L236">                }</span>
+<span class="nc" id="L237">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L240">                Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L241">                headers.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L242">                return headers;</span>
+            }
+        };
+
+<span class="nc" id="L246">        VolleySingleton.getInstance(HomeActivity.this).addToRequestQueue(stringRequest);</span>
+<span class="nc" id="L247">    }</span>
+
+
+    private void showStatusDialog(boolean success) {
+<span class="nc" id="L251">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L252">                .setTitle(&quot;Error&quot;)</span>
+<span class="nc" id="L253">                .setMessage(&quot;Failed to fetch profile data.&quot;)</span>
+<span class="nc" id="L254">                .setPositiveButton(&quot;OK&quot;, null)</span>
+<span class="nc" id="L255">                .show();</span>
+<span class="nc" id="L256">    }</span>
+
+
+
+
+//    Receiving Messages
+
+<span class="fc" id="L263">    private final BroadcastReceiver webSocketReceiver = new BroadcastReceiver() {</span>
+        @Override
+        public void onReceive(Context context, Intent intent) {
+<span class="fc" id="L266">            String key = intent.getStringExtra(&quot;key&quot;);</span>
+<span class="fc" id="L267">            String message = intent.getStringExtra(&quot;message&quot;);</span>
+
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">            if (&quot;notifications&quot;.equals(key)){</span>
+<span class="fc" id="L270">                Toast.makeText(context, &quot;Received: &quot; + message, Toast.LENGTH_SHORT).show();</span>
+            }
+<span class="fc" id="L272">        }</span>
+    };
+
+    @Override
+    protected void onStart(){
+<span class="fc" id="L277">        super.onStart();</span>
+<span class="fc" id="L278">        LocalBroadcastManager.getInstance(this)</span>
+<span class="fc" id="L279">                .registerReceiver(webSocketReceiver, new IntentFilter(&quot;WebSocketMessageReceived&quot;));</span>
+<span class="fc" id="L280">    }</span>
+
+    @Override
+    protected void onStop(){
+<span class="fc" id="L284">        super.onStop();</span>
+<span class="fc" id="L285">        LocalBroadcastManager.getInstance(this).unregisterReceiver(webSocketReceiver);</span>
+<span class="fc" id="L286">    }</span>
+
+    @Override
+    protected void onResume(){
+<span class="fc" id="L290">        super.onResume();</span>
+        try {
+<span class="fc" id="L292">            updateDetails();</span>
+<span class="nc" id="L293">        } catch (JSONException e) {</span>
+<span class="nc" id="L294">            throw new RuntimeException(e);</span>
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">    }</span>
+
+
+    private void updateDetails() throws JSONException {
+<span class="fc" id="L300">        JSONObject responseObject = new JSONObject(response);</span>
+<span class="fc" id="L301">        int id = responseObject.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L302">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/accounts/&quot; + id;</span>
+
+<span class="fc" id="L304">        JsonObjectRequest getDetails = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+<span class="fc" id="L308">                new Response.Listener&lt;JSONObject&gt;() {</span>
+
+                    @Override
+                    public void onResponse(JSONObject object) {
+<span class="fc" id="L312">                        response = object.toString();</span>
+<span class="fc" id="L313">                    }</span>
+<span class="fc" id="L314">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+<span class="nc" id="L318">            }</span>
+        }
+
+        );
+
+<span class="fc" id="L323">        VolleySingleton.getInstance(HomeActivity.this).addToRequestQueue(getDetails);</span>
+<span class="fc" id="L324">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

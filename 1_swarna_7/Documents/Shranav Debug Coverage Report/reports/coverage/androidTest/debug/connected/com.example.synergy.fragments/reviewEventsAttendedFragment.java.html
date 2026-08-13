@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>reviewEventsAttendedFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">reviewEventsAttendedFragment.java</span></div><h1>reviewEventsAttendedFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.myEventsReviewAdapter;
+import com.example.synergy.adapters.reviewEventsAttendedAdapter;
+import com.example.synergy.items.EventItem;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A simple {@link Fragment} subclass.
+ * Use the {@link reviewEventsAttendedFragment#newInstance} factory method to
+ * create an instance of this fragment.
+ */
+public class reviewEventsAttendedFragment extends Fragment {
+
+    public List&lt;EventItem&gt; attendedEvents;
+    private RecyclerView attendedEventsRv;
+    private reviewEventsAttendedAdapter adapter;
+    private static final String ARG_USER_DETAILS = &quot;userDetails&quot;;
+    private String userDetails;
+
+<span class="fc" id="L44">    public reviewEventsAttendedFragment() {</span>
+        // Required empty public constructor
+<span class="fc" id="L46">    }</span>
+
+
+
+    public static reviewEventsAttendedFragment newInstance(String userDetails) {
+<span class="fc" id="L51">        reviewEventsAttendedFragment fragment = new reviewEventsAttendedFragment();</span>
+<span class="fc" id="L52">        Bundle args = new Bundle();</span>
+<span class="fc" id="L53">        args.putString(ARG_USER_DETAILS, userDetails);</span>
+<span class="fc" id="L54">        fragment.setArguments(args);</span>
+<span class="fc" id="L55">        return fragment;</span>
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L60">        super.onCreate(savedInstanceState);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="fc" id="L62">            this.userDetails = getArguments().getString(ARG_USER_DETAILS);</span>
+        }
+
+
+<span class="fc" id="L66">    }</span>
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+<span class="fc" id="L72">        View view = inflater.inflate(R.layout.fragment_review_events_attended, container, false);</span>
+
+<span class="fc" id="L74">        attendedEvents = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L75">        attendedEventsRv = view.findViewById(R.id.attendedEventsRv);</span>
+<span class="fc" id="L76">        attendedEventsRv.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+        try {
+<span class="fc" id="L79">            JSONObject userObject = new JSONObject(userDetails);</span>
+<span class="fc" id="L80">            fetchAttendingEvents(userObject.getInt(&quot;id&quot;));</span>
+<span class="nc" id="L81">        } catch (JSONException e) {</span>
+<span class="nc" id="L82">            throw new RuntimeException(e);</span>
+<span class="fc" id="L83">        }</span>
+;
+
+<span class="fc" id="L86">        return view;</span>
+
+
+    }
+
+    public void setUpAdapter(){
+<span class="fc" id="L92">        adapter = new reviewEventsAttendedAdapter(requireContext(), userDetails, attendedEvents, getParentFragmentManager());</span>
+<span class="fc" id="L93">        attendedEventsRv.setAdapter(adapter);</span>
+<span class="fc" id="L94">    }</span>
+
+
+    private void fetchAttendingEvents(int userId){
+<span class="fc" id="L98">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; + userId + &quot;/interested&quot;;</span>
+
+<span class="fc" id="L100">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET,</span>
+                server_url,
+                null,
+<span class="fc" id="L103">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+
+                        try {
+<span class="fc" id="L108">                            JSONArray attending = jsonObject.getJSONArray(&quot;attendingEvents&quot;);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                            for (int i =0 ; i &lt; attending.length(); i++){</span>
+<span class="nc" id="L110">                                JSONObject obj = (JSONObject) attending.get(i);</span>
+<span class="nc" id="L111">                                Log.d(&quot;RESPONSE&quot;, obj.toString());</span>
+<span class="nc" id="L112">                                attendedEvents.add(new EventItem(</span>
+<span class="nc" id="L113">                                        obj.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L114">                                        obj.getString(&quot;eventName&quot;),</span>
+<span class="nc" id="L115">                                        obj.getString(&quot;eventTime&quot;),</span>
+<span class="nc" id="L116">                                        obj.getString(&quot;eventLocation&quot;),</span>
+<span class="nc" id="L117">                                        obj.getString(&quot;eventDate&quot;),</span>
+<span class="nc" id="L118">                                        obj.getString(&quot;description&quot;)</span>
+                                ));
+                            }
+<span class="nc" id="L121">                        } catch (JSONException e) {</span>
+<span class="nc" id="L122">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L123">                        }</span>
+<span class="fc" id="L124">                        setUpAdapter();</span>
+
+<span class="fc" id="L126">                    }</span>
+                },
+<span class="fc" id="L128">                new Response.ErrorListener(){</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L131">                        JSONArray userEvents = null;</span>
+<span class="nc" id="L132">                        Log.d(&quot;ERROR&quot;, volleyError.toString());</span>
+<span class="nc" id="L133">                    }</span>
+                });
+
+<span class="fc" id="L136">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L137">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

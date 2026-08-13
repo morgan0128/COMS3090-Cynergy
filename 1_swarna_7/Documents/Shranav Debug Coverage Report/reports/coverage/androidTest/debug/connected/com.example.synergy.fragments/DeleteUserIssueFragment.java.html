@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeleteUserIssueFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">DeleteUserIssueFragment.java</span></div><h1>DeleteUserIssueFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.items.TicketApi;
+
+<span class="nc" id="L22">public class DeleteUserIssueFragment extends Fragment {</span>
+
+    private static final String ARG_USER_ID = &quot;userId&quot;; // current user if needed later
+
+    private EditText targetUserIdInput;
+    private EditText descriptionInput;
+    private Button   submitButton;
+
+<span class="nc" id="L30">    private int currentUserId = -1;</span>
+
+    public static DeleteUserIssueFragment newInstance(int userId) {
+<span class="nc" id="L33">        DeleteUserIssueFragment fragment = new DeleteUserIssueFragment();</span>
+<span class="nc" id="L34">        Bundle args = new Bundle();</span>
+<span class="nc" id="L35">        args.putInt(ARG_USER_ID, userId);</span>
+<span class="nc" id="L36">        fragment.setArguments(args);</span>
+<span class="nc" id="L37">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState
+    ) {
+<span class="nc" id="L47">        View view = inflater.inflate(R.layout.fragment_delete_user_issue_form, container, false);</span>
+
+<span class="nc" id="L49">        targetUserIdInput = view.findViewById(R.id.targetUserIdInput);</span>
+<span class="nc" id="L50">        descriptionInput  = view.findViewById(R.id.descriptionInput);</span>
+<span class="nc" id="L51">        submitButton      = view.findViewById(R.id.submitDeleteUserIssueBtn);</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="nc" id="L54">            currentUserId = getArguments().getInt(ARG_USER_ID, -1);</span>
+        }
+
+<span class="nc" id="L57">        submitButton.setOnClickListener(v -&gt; submitDeleteUserIssue());</span>
+
+<span class="nc" id="L59">        return view;</span>
+    }
+
+    private void submitDeleteUserIssue() {
+<span class="nc" id="L63">        String idText = targetUserIdInput.getText().toString().trim();</span>
+<span class="nc" id="L64">        String description = descriptionInput.getText().toString().trim();</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (TextUtils.isEmpty(idText)) {</span>
+<span class="nc" id="L67">            Toast.makeText(requireContext(), &quot;Please enter the user id to delete&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L68">            return;</span>
+        }
+
+        int userIdToDelete;
+        try {
+<span class="nc" id="L73">            userIdToDelete = Integer.parseInt(idText);</span>
+<span class="nc" id="L74">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L75">            Toast.makeText(requireContext(), &quot;Invalid user id&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L76">            return;</span>
+<span class="nc" id="L77">        }</span>
+
+<span class="nc" id="L79">        String url = String.format(TicketApi.POST_DELETE_USER_NO_ADMIN, userIdToDelete);</span>
+
+<span class="nc" id="L81">        StringRequest request = new StringRequest(</span>
+                Request.Method.POST,
+                url,
+                response -&gt; {
+<span class="nc" id="L85">                    Toast.makeText(requireContext(), &quot;Delete user request sent&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L86">                    clearFields();</span>
+<span class="nc" id="L87">                },</span>
+<span class="nc" id="L88">                error -&gt; Toast.makeText(requireContext(), &quot;Failed: &quot; + error.toString(), Toast.LENGTH_SHORT).show()</span>
+        );
+
+<span class="nc" id="L91">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L92">    }</span>
+
+    private void clearFields() {
+<span class="nc" id="L95">        targetUserIdInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L96">        descriptionInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L97">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

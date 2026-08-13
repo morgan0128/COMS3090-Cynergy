@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">EventsActivity.java</span></div><h1>EventsActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
+
+import com.example.synergy.R;
+import com.example.synergy.fragments.allEventsFragment;
+import com.example.synergy.fragments.eventMapFragment;
+import com.example.synergy.fragments.interestedEventsListFragment;
+import com.example.synergy.fragments.myEventsFragment;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="fc" id="L24">public class EventsActivity extends AppCompatActivity {</span>
+    private TabLayout tabLayout;
+    private ViewPager2 viewPager;
+    private String userDetailString;
+    private Button backbutton;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L31">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L32">        setContentView(R.layout.activity_events);</span>
+
+<span class="fc" id="L34">        Bundle userDetails = getIntent().getExtras();</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (userDetails != null){</span>
+<span class="fc" id="L36">            userDetailString = userDetails.getString(&quot;userDetails&quot;);</span>
+        }
+
+<span class="fc" id="L39">        tabLayout = findViewById(R.id.tabLayout);</span>
+<span class="fc" id="L40">        viewPager = findViewById(R.id.viewPager);</span>
+
+<span class="fc" id="L42">        backbutton = findViewById(R.id.backbuttonToHome);</span>
+
+<span class="fc" id="L44">        backbutton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+//                Go into edit activity to edit accounts
+<span class="nc" id="L48">                finish();</span>
+<span class="nc" id="L49">            }</span>
+
+        });
+<span class="fc" id="L52">        viewPager.setAdapter(new EventsPagerAdapter(this, userDetailString));</span>
+<span class="fc" id="L53">        viewPager.setOffscreenPageLimit(4);</span>
+
+<span class="fc" id="L55">        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -&gt;{</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            if (position == 0) tab.setText(&quot;All Events&quot;);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            else if (position == 1) tab.setText(&quot;My Events&quot;);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            else if (position ==2) tab.setText(&quot;Event Map&quot;);</span>
+<span class="fc" id="L59">            else tab.setText(&quot;Interested Events&quot;);</span>
+<span class="fc" id="L60">        }).attach();</span>
+<span class="fc" id="L61">    }</span>
+
+
+    public static class EventsPagerAdapter extends FragmentStateAdapter{
+        private final String userDetailString;
+
+        public EventsPagerAdapter(@NonNull AppCompatActivity activity, String userDetailString){
+<span class="fc" id="L68">            super(activity);</span>
+<span class="fc" id="L69">            this.userDetailString = userDetailString;</span>
+<span class="fc" id="L70">        }</span>
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position){
+<span class="fc" id="L75">            Bundle args = new Bundle();</span>
+<span class="fc" id="L76">            String userDetailStringReduced = &quot;&quot;;</span>
+            try {
+<span class="fc" id="L78">                JSONObject userDetail = new JSONObject(userDetailString);</span>
+<span class="fc" id="L79">                JSONObject reduced = new JSONObject();</span>
+<span class="fc" id="L80">                reduced.put(&quot;id&quot;, userDetail.getInt(&quot;id&quot;));</span>
+<span class="fc" id="L81">                reduced.put(&quot;emailId&quot;, userDetail.getString(&quot;emailId&quot;));</span>
+<span class="fc" id="L82">                userDetailStringReduced = reduced.toString();</span>
+<span class="nc" id="L83">            } catch (JSONException e) {</span>
+<span class="nc" id="L84">                throw new RuntimeException(e);</span>
+<span class="fc" id="L85">            }</span>
+
+<span class="fc" id="L87">            args.putString(&quot;userDetails&quot;, userDetailStringReduced);</span>
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (position==0){</span>
+<span class="fc" id="L90">                allEventsFragment allEvents = new allEventsFragment();</span>
+<span class="fc" id="L91">                allEvents.setArguments(args);</span>
+<span class="fc" id="L92">                return  allEvents;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            } else if (position == 1){</span>
+<span class="fc" id="L94">                myEventsFragment myEvents = new myEventsFragment();</span>
+<span class="fc" id="L95">                myEvents.setArguments(args);</span>
+<span class="fc" id="L96">                return myEvents;</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            } else if (position == 2){</span>
+<span class="fc" id="L99">                eventMapFragment eventMap = new eventMapFragment();</span>
+<span class="fc" id="L100">                eventMap.setArguments(args);</span>
+<span class="fc" id="L101">                return eventMap;</span>
+            } else {
+<span class="fc" id="L103">                interestedEventsListFragment interestedEvents = new interestedEventsListFragment();</span>
+<span class="fc" id="L104">                interestedEvents.setArguments(args);</span>
+<span class="fc" id="L105">                return interestedEvents;</span>
+            }
+
+        }
+
+        @Override
+        public int getItemCount(){
+<span class="fc" id="L112">            return 4;</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>interestedEventsListFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">interestedEventsListFragment.java</span></div><h1>interestedEventsListFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SearchView;
+
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.EventAdapter;
+import com.example.synergy.items.EventItem;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L35">public class interestedEventsListFragment extends Fragment {</span>
+
+    private RecyclerView recyclerView;
+
+    private SearchView eventSv;
+    private EventAdapter adapter;
+<span class="fc" id="L41">    private final List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+
+
+    private String userDetailString;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+<span class="fc" id="L52">        View view = inflater.inflate(R.layout.fragment_interested_events, container, false);</span>
+
+<span class="fc" id="L54">        setupUI(view);</span>
+
+<span class="fc" id="L56">        handleArguments(getArguments());</span>
+<span class="fc" id="L57">        searchViewFunctionality();</span>
+<span class="fc" id="L58">        setupAdapter();</span>
+
+        try {
+<span class="fc" id="L61">            JSONObject userDetailBody = new JSONObject(userDetailString);</span>
+<span class="fc" id="L62">            int userID = userDetailBody.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L63">            getUserInterestedEvents(userID);</span>
+<span class="nc" id="L64">        } catch (JSONException e) {</span>
+<span class="nc" id="L65">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L66">        }</span>
+
+<span class="fc" id="L68">        return view;</span>
+    }
+
+    @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+    private void setupAdapter(){
+        try {
+<span class="fc" id="L74">            adapter = new EventAdapter(requireContext(), eventList, null, false, userDetailString,</span>
+<span class="fc" id="L75">                    getParentFragmentManager(), true);</span>
+<span class="nc" id="L76">        } catch (JSONException e) {</span>
+<span class="nc" id="L77">            throw new RuntimeException(e);</span>
+<span class="fc" id="L78">        }</span>
+
+<span class="fc" id="L80">        adapter.setOnEventDeletedListener(eventId -&gt; {</span>
+            // Remove from list
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            for (int i = 0; i &lt; eventList.size(); i++) {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                if (eventList.get(i).getId() == eventId) {</span>
+<span class="nc" id="L84">                    eventList.remove(i);</span>
+<span class="nc" id="L85">                    break;</span>
+                }
+            }
+
+<span class="nc" id="L89">            adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L90">        });</span>
+<span class="fc" id="L91">        recyclerView.setAdapter(adapter);</span>
+<span class="fc" id="L92">    }</span>
+
+    private void searchViewFunctionality(){
+<span class="fc" id="L95">        eventSv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {</span>
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (adapter != null) adapter.filter(s);</span>
+<span class="nc" id="L99">                return true;</span>
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                if (adapter != null) adapter.filter(s);</span>
+<span class="nc" id="L105">                return true;</span>
+            }
+        });
+<span class="fc" id="L108">    }</span>
+
+    private void handleArguments(Bundle args){
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (args != null) {</span>
+<span class="fc" id="L112">            userDetailString = args.getString(&quot;userDetails&quot;);</span>
+
+        }
+<span class="fc" id="L115">    }</span>
+    private void setupUI(View view){
+<span class="fc" id="L117">        recyclerView = view.findViewById(R.id.recyclerView);</span>
+<span class="fc" id="L118">        eventSv = view.findViewById(R.id.searchEvents);</span>
+<span class="fc" id="L119">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+<span class="fc" id="L120">    }</span>
+
+    private void populateEvents(JSONArray response) throws JSONException {
+
+<span class="fc" id="L124">        List&lt;EventItem&gt; newList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="fc" id="L127">            JSONObject obj = response.getJSONObject(i);</span>
+<span class="fc" id="L128">            newList.add(new EventItem(</span>
+<span class="fc" id="L129">                    obj.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L130">                    obj.getString(&quot;eventName&quot;),</span>
+<span class="fc" id="L131">                    obj.getString(&quot;eventTime&quot;),</span>
+<span class="fc" id="L132">                    obj.getString(&quot;eventLocation&quot;),</span>
+<span class="fc" id="L133">                    obj.getString(&quot;eventDate&quot;),</span>
+<span class="fc" id="L134">                    obj.getString(&quot;description&quot;)</span>
+            ));
+        }
+
+<span class="fc" id="L138">        DiffUtil.DiffResult diffResult = handleDifferentResult(newList);</span>
+
+<span class="fc" id="L140">        eventList.clear();</span>
+<span class="fc" id="L141">        eventList.addAll(newList);</span>
+<span class="fc" id="L142">        adapter.userEvents = response;</span>
+<span class="fc" id="L143">        diffResult.dispatchUpdatesTo(adapter);</span>
+<span class="fc" id="L144">        adapter.updateFullList(newList);</span>
+<span class="fc" id="L145">    }</span>
+
+
+    private DiffUtil.DiffResult handleDifferentResult(List&lt;EventItem&gt; newList){
+        // Compute diff and update
+<span class="fc" id="L150">        return DiffUtil.calculateDiff(new DiffUtil.Callback() {</span>
+            @Override
+<span class="fc" id="L152">            public int getOldListSize() { return eventList.size(); }</span>
+            @Override
+<span class="fc" id="L154">            public int getNewListSize() { return newList.size(); }</span>
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                return eventList.get(oldItemPosition).getId() == newList.get(newItemPosition).getId();</span>
+            }
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+<span class="fc" id="L161">                EventItem oldItem = eventList.get(oldItemPosition);</span>
+<span class="fc" id="L162">                EventItem newItem = newList.get(newItemPosition);</span>
+<span class="fc" id="L163">                return oldItem.equals(newItem); // implement equals in EventItem</span>
+            }
+        });
+    }
+
+    private void getUserInterestedEvents(int userId){
+<span class="fc" id="L169">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; + userId + &quot;/interested&quot;;</span>
+
+<span class="fc" id="L171">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET,</span>
+                server_url,
+                null,
+<span class="fc" id="L174">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+
+                        try {
+<span class="fc" id="L179">                            JSONArray attending = jsonObject.getJSONArray(&quot;attendingEvents&quot;);</span>
+<span class="fc" id="L180">                            populateEvents(attending);</span>
+<span class="nc" id="L181">                        } catch (JSONException e) {</span>
+<span class="nc" id="L182">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L183">                        }</span>
+<span class="fc" id="L184">                        recyclerView.setAdapter(adapter);</span>
+<span class="fc" id="L185">                    }</span>
+                },
+<span class="fc" id="L187">                new Response.ErrorListener(){</span>
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L190">                        JSONArray userEvents = null;</span>
+<span class="nc" id="L191">                        Log.d(&quot;ERROR&quot;, volleyError.toString());</span>
+<span class="nc" id="L192">                    }</span>
+                });
+
+<span class="fc" id="L195">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L196">    }</span>
+
+
+<span class="fc" id="L199">    private boolean eventsLoaded = false;</span>
+
+    @Override
+    public void onResume() {
+<span class="fc" id="L203">        super.onResume();</span>
+
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (!eventsLoaded) {</span>
+            try {
+<span class="fc" id="L207">                JSONObject userDetailsBody = new JSONObject(userDetailString);</span>
+<span class="fc" id="L208">                int userID = userDetailsBody.getInt(&quot;id&quot;);</span>
+<span class="fc" id="L209">                getUserInterestedEvents(userID);</span>
+<span class="fc" id="L210">                eventsLoaded = true;</span>
+<span class="nc" id="L211">            } catch (JSONException e) {</span>
+<span class="nc" id="L212">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L213">            }</span>
+        }
+<span class="fc" id="L215">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>receivedRequestAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">receivedRequestAdapter.java</span></div><h1>receivedRequestAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+
+import com.android.volley.Response;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import com.example.synergy.VolleySingleton;
+
+import com.example.synergy.R;
+import com.example.synergy.items.User;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
+
+public class receivedRequestAdapter extends RecyclerView.Adapter&lt;receivedRequestAdapter.receivedRequestViewHolder&gt; {
+
+
+    private final Context context;
+    private List&lt;User&gt; users;
+    private final String userDetailString;
+
+
+<span class="fc" id="L39">    public receivedRequestAdapter(Context context, List&lt;User&gt; users, String userDetailString){</span>
+<span class="fc" id="L40">        this.context = context;</span>
+<span class="fc" id="L41">        this.users = users;</span>
+<span class="fc" id="L42">        this.userDetailString = userDetailString;</span>
+<span class="fc" id="L43">    }</span>
+
+    @NonNull
+    @Override
+    public receivedRequestViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="nc" id="L48">        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_received_request, parent, false);</span>
+
+<span class="nc" id="L50">        return new receivedRequestViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull receivedRequestViewHolder holder, int position) {
+<span class="nc" id="L55">        User friend = users.get(position);</span>
+<span class="nc" id="L56">        holder.userName.setText(friend.getName());</span>
+
+<span class="nc" id="L58">        holder.rejectFriend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L59">            new AlertDialog.Builder(context)</span>
+<span class="nc" id="L60">                    .setTitle(&quot;Decline Request&quot;)</span>
+<span class="nc" id="L61">                    .setMessage(&quot;Are you sure?&quot;)</span>
+<span class="nc" id="L62">                    .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; {</span>
+                        try {
+<span class="nc" id="L64">                            rejectRequest(friend.getId());</span>
+<span class="nc" id="L65">                        } catch (JSONException e) {</span>
+<span class="nc" id="L66">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L67">                        }</span>
+
+<span class="nc" id="L69">                    })</span>
+<span class="nc" id="L70">                    .setNegativeButton(&quot;No&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L71">                        dialog.dismiss(); // just close the dialog</span>
+<span class="nc" id="L72">                    })</span>
+<span class="nc" id="L73">                    .show();</span>
+
+<span class="nc" id="L75">        });</span>
+
+<span class="nc" id="L77">        holder.acceptFriend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L78">            new AlertDialog.Builder(context)</span>
+<span class="nc" id="L79">                    .setTitle(&quot;Accept Request&quot;)</span>
+<span class="nc" id="L80">                    .setMessage(&quot;Are you sure?&quot;)</span>
+<span class="nc" id="L81">                    .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; {</span>
+
+                        try {
+<span class="nc" id="L84">                            acceptRequest(friend.getId());</span>
+<span class="nc" id="L85">                        } catch (JSONException e) {</span>
+<span class="nc" id="L86">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L87">                        }</span>
+<span class="nc" id="L88">                    })</span>
+<span class="nc" id="L89">                    .setNegativeButton(&quot;No&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L90">                        dialog.dismiss(); // just close the dialog</span>
+<span class="nc" id="L91">                    })</span>
+<span class="nc" id="L92">                    .show();</span>
+<span class="nc" id="L93">        });</span>
+
+
+
+<span class="nc" id="L97">        holder.itemView.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L98">            Toast.makeText(context, &quot;You clicked on &quot; + friend.getName() + &quot;!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L99">        });</span>
+
+<span class="nc" id="L101">    }</span>
+
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L105">        return users.size();</span>
+    }
+
+    /**
+     *  Update the list based on the filtered list
+     * @param filteredList : list that is returned after filtering
+     */
+    @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+    public void updateList(List&lt;User&gt; filteredList) {
+<span class="nc" id="L114">        this.users = filteredList; // assuming your list variable is called userList</span>
+<span class="nc" id="L115">        notifyDataSetChanged();</span>
+<span class="nc" id="L116">    }</span>
+
+    public static class receivedRequestViewHolder extends RecyclerView.ViewHolder {
+        TextView userName;
+        ImageView rejectFriend;
+        ImageView acceptFriend;
+
+        public receivedRequestViewHolder(@NonNull View itemView){
+<span class="nc" id="L124">            super(itemView);</span>
+<span class="nc" id="L125">            userName = itemView.findViewById(R.id.friendName);</span>
+<span class="nc" id="L126">            rejectFriend = itemView.findViewById(R.id.reject_button);</span>
+<span class="nc" id="L127">            acceptFriend = itemView.findViewById(R.id.accept_button);</span>
+
+
+<span class="nc" id="L130">        }</span>
+    }
+
+    private void rejectRequest(int friendId) throws JSONException {
+<span class="nc" id="L134">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="nc" id="L135">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L136">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/decline/&quot;</span>
+                + userId + &quot;/&quot; + friendId;
+
+<span class="nc" id="L139">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                server_url,
+                null,
+<span class="nc" id="L143">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+<span class="nc" id="L146">                        Toast.makeText(context, &quot;Friend Request Rejected&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L147">                    }</span>
+                },
+                volleyError -&gt; {
+<span class="nc" id="L150">                    Toast.makeText(context, volleyError.toString(), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L151">                }</span>
+
+        );
+
+<span class="nc" id="L155">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L156">    }</span>
+
+    private void acceptRequest(int friendId) throws JSONException {
+<span class="nc" id="L159">        JSONObject userDetails = new JSONObject(userDetailString);</span>
+<span class="nc" id="L160">        int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L161">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/accept/&quot;</span>
+                + userId + &quot;/&quot; + friendId;
+
+<span class="nc" id="L164">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                server_url,
+                null,
+<span class="nc" id="L168">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+<span class="nc" id="L171">                        Toast.makeText(context, &quot;Friend Added&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L172">                    }</span>
+                },
+                volleyError -&gt; {
+<span class="nc" id="L175">                    Toast.makeText(context, volleyError.toString(), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L176">                }</span>
+
+        );
+
+<span class="nc" id="L180">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L181">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

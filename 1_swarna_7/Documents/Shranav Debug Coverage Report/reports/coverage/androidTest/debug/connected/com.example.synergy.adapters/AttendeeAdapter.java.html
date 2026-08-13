@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttendeeAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">AttendeeAdapter.java</span></div><h1>AttendeeAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.synergy.items.Attendee;
+import com.example.synergy.R;
+
+import java.util.List;
+
+/**
+ * Adapter used to display a list of Attendee objects inside a RecyclerView.
+ * Each row shows the attendee's username and their user image.
+ * uses VH (ViewHolder)
+ */
+public class AttendeeAdapter extends RecyclerView.Adapter&lt;AttendeeAdapter.VH&gt; {
+
+    /** The list of attendee data that is to be displayed */
+    private final List&lt;Attendee&gt; data;
+
+    /** Context used to inflate layouts (to create the row view). */
+    private final Context context;
+
+    /**
+     * Creates a new AttendeeAdapter.
+     * expects data and context from the activity
+     * constructor
+     *
+     * @param data list of attendees
+     * @param context activity or fragment context
+     */
+<span class="nc" id="L39">    public AttendeeAdapter(List&lt;Attendee&gt; data, Context context) {</span>
+<span class="nc" id="L40">        this.data = data;</span>
+<span class="nc" id="L41">        this.context = context;</span>
+<span class="nc" id="L42">    }</span>
+
+    /**
+     * ViewHolder representing a single row in the attendee list.
+     * Holds the username and image views.
+     */
+    public static class VH extends RecyclerView.ViewHolder {
+
+        /** TextView showing the attendee's username. */
+        TextView username;
+
+        /** ImageView showing the attendee's user image. */
+        ImageView image;
+
+        /**
+         * Creates a ViewHolder for one attendee row.
+         *
+         * @param v the inflated row layout
+         */
+        VH(View v) {
+<span class="nc" id="L62">            super(v);</span>
+<span class="nc" id="L63">            username = v.findViewById(R.id.username); //the user name</span>
+<span class="nc" id="L64">            image = v.findViewById(R.id.attendeeImage); // user image</span>
+<span class="nc" id="L65">        }</span>
+    }
+
+    /**
+     * Called when RecyclerView needs a new row (ViewHolder).
+     *
+     * @param parent container for the row
+     * @param viewType type of view
+     * @return a new ViewHolder for the row
+     */
+    @NonNull
+    @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="nc" id="L78">        View v = LayoutInflater.from(context) //gets inflator which is needed to turn xml into view</span>
+<span class="nc" id="L79">                .inflate(R.layout.activity_attendance_row, parent, false); //creating a view using that inflator</span>
+
+<span class="nc" id="L81">        return new VH(v); // wrapping the inflated row inside VH</span>
+    }
+
+    /**
+     * fills row with data.
+     * specific position to identify the row to fill.
+     *
+     * @param holder ViewHolder for the row
+     * @param pos position of the attendee in the list
+     */
+    @Override
+    public void onBindViewHolder(@NonNull VH holder, int pos) {
+
+        // Get attendee object at this position
+<span class="nc" id="L95">        Attendee a = data.get(pos);</span>
+
+        // Set the name and image
+<span class="nc" id="L98">        holder.username.setText(a.getName());</span>
+<span class="nc" id="L99">        holder.image.setImageResource(a.getAvatarResId());</span>
+<span class="nc" id="L100">    }</span>
+
+    /**
+     * Returns the total number of attendees in the list.
+     *
+     * @return item count
+     */
+    @Override
+    public int getItemCount() {
+<span class="nc" id="L109">        return data.size(); // attendee size</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

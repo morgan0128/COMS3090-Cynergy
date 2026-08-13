@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>friendsEventListSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">friendsEventListSheet.java</span></div><h1>friendsEventListSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.EventAdapter;
+import com.example.synergy.items.EventItem;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L31">public class friendsEventListSheet extends BottomSheetDialogFragment {</span>
+    private RecyclerView friends_events_rv;
+
+<span class="nc" id="L34">    private final List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+    private String userDetailString;
+    private TextView friendName_tv;
+    private static final String ARG_USER_DETAILS = &quot;userDetails&quot;;
+    private static final String ARG_FRIEND_ID= &quot;friendId&quot;;
+    private int friendId;
+
+    public static friendsEventListSheet newInstance(String user, int friendId) {
+<span class="nc" id="L42">        friendsEventListSheet fragment = new friendsEventListSheet();</span>
+<span class="nc" id="L43">        Bundle args = new Bundle();</span>
+<span class="nc" id="L44">        args.putString(ARG_USER_DETAILS, user);</span>
+<span class="nc" id="L45">        args.putInt(ARG_FRIEND_ID, friendId);</span>
+
+<span class="nc" id="L47">        fragment.setArguments(args);</span>
+
+<span class="nc" id="L49">        return fragment;</span>
+    }
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+<span class="nc" id="L55">        View view = inflater.inflate(R.layout.bottom_sheet_friend_events, container, false);</span>
+
+<span class="nc" id="L57">        friends_events_rv = view.findViewById(R.id.recyclerView);</span>
+<span class="nc" id="L58">        friendName_tv = view.findViewById(R.id.friendName);</span>
+<span class="nc" id="L59">        friends_events_rv.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="nc" id="L61">        handleRequestSetup();</span>
+
+
+<span class="nc" id="L64">        return view;</span>
+    }
+
+    private void handleRequestSetup(){
+<span class="nc" id="L68">        Bundle args = getArguments();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (args!= null){</span>
+<span class="nc" id="L70">            userDetailString = args.getString(ARG_USER_DETAILS);</span>
+<span class="nc" id="L71">            friendId = args.getInt(ARG_FRIEND_ID);</span>
+<span class="nc" id="L72">            JSONObject userDetails = null;</span>
+            try {
+<span class="nc" id="L74">                userDetails = new JSONObject(userDetailString);</span>
+<span class="nc" id="L75">                int userId = userDetails.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L76">                getFriendsEventsRequest(userId);</span>
+<span class="nc" id="L77">            } catch (JSONException e) {</span>
+<span class="nc" id="L78">                throw new RuntimeException(e);</span>
+<span class="nc" id="L79">            }</span>
+
+        }
+<span class="nc" id="L82">    }</span>
+
+    private void getFriendsEventsRequest(int userId){
+<span class="nc" id="L85">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/&quot; + userId+ &quot;/friendsInterestedEvents&quot;;</span>
+
+<span class="nc" id="L87">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+<span class="nc" id="L91">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+<span class="nc" id="L94">                        Log.d(&quot;RESPONSE&quot;, response.toString());</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                        for (int i =0; i &lt; response.length(); i++){</span>
+                            try {
+<span class="nc" id="L97">                                JSONObject friendDetail = (JSONObject) response.get(i);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                                if (friendDetail.getInt(&quot;friendId&quot;) == friendId){</span>
+<span class="nc" id="L99">                                    handleFriendEvents(friendDetail);</span>
+                                }
+<span class="nc" id="L101">                            } catch (JSONException e) {</span>
+<span class="nc" id="L102">                                throw new RuntimeException(e);</span>
+<span class="nc" id="L103">                            }</span>
+                        }
+<span class="nc" id="L105">                    }</span>
+<span class="nc" id="L106">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L109">                Log.d(&quot;VOLLEY ERROR&quot;, error.toString());</span>
+<span class="nc" id="L110">            }</span>
+        });
+
+<span class="nc" id="L113">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L114">    }</span>
+
+    private void populateEvents(JSONArray jsonArray) throws JSONException {
+<span class="nc" id="L117">        eventList.clear();</span>
+
+        try {
+            // Takes in JSONArray object from response, loops over it
+            // extracts event details and calls EventAdapter to create a event item
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            for (int i = 0; i &lt; jsonArray.length(); i++) {</span>
+<span class="nc" id="L123">                JSONObject obj = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L124">                eventList.add(new EventItem(</span>
+<span class="nc" id="L125">                        obj.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L126">                        obj.getString(&quot;eventName&quot;),</span>
+<span class="nc" id="L127">                        obj.getString(&quot;eventTime&quot;),</span>
+<span class="nc" id="L128">                        obj.getString(&quot;eventLocation&quot;),</span>
+<span class="nc" id="L129">                        obj.getString(&quot;eventDate&quot;),</span>
+<span class="nc" id="L130">                        obj.getString(&quot;description&quot;)</span>
+                ));
+            }
+<span class="nc" id="L133">        } catch (Exception e) {</span>
+<span class="nc" id="L134">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="nc" id="L135">        }</span>
+
+<span class="nc" id="L137">        EventAdapter friends_events_adapter = new EventAdapter(requireContext(), eventList, null,</span>
+<span class="nc" id="L138">                false, userDetailString, getParentFragmentManager());</span>
+<span class="nc" id="L139">        friends_events_rv.setAdapter(friends_events_adapter);</span>
+
+<span class="nc" id="L141">    }</span>
+
+    private void handleFriendEvents(JSONObject friendDetails) throws JSONException {
+<span class="nc" id="L144">        String friendUsername = friendDetails.getString(&quot;friendUsername&quot;);</span>
+<span class="nc" id="L145">        friendName_tv.setText(friendUsername + &quot;'s Events&quot;);</span>
+
+<span class="nc" id="L147">        JSONObject interestedEvents = friendDetails.getJSONObject(&quot;interestedEvents&quot;);</span>
+<span class="nc" id="L148">        JSONArray attending = interestedEvents.getJSONArray(&quot;attendingEvents&quot;);</span>
+<span class="nc" id="L149">        populateEvents(attending);</span>
+
+<span class="nc" id="L151">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

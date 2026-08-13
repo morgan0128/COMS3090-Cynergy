@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>myEventReviewsSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">myEventReviewsSheet.java</span></div><h1>myEventReviewsSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.myEventsReviewAdapter;
+import com.example.synergy.adapters.reviewAdapter;
+import com.example.synergy.items.EventItem;
+import com.example.synergy.items.review;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
+
+<span class="nc" id="L33">public class myEventReviewsSheet extends BottomSheetDialogFragment {</span>
+    private static final String ARG_USER_DETAILS = &quot;userDetails&quot;;
+    private static final String ARG_EVENT_ID = &quot;eventIds&quot;;
+    private static final String ARG_EVENT_NAME = &quot;eventName&quot;;
+    private reviewAdapter adapter;
+    private String userDetails;
+
+    private int eventId;
+    private String eventName;
+    private TextView eventNameTv;
+    private RecyclerView listOfReviewsRv;
+
+
+    public static myEventReviewsSheet newInstance(String userDetails, int eventId, String eventName) {
+<span class="nc" id="L47">        myEventReviewsSheet fragment = new myEventReviewsSheet();</span>
+<span class="nc" id="L48">        Bundle args = new Bundle();</span>
+<span class="nc" id="L49">        args.putString(ARG_USER_DETAILS, userDetails);</span>
+<span class="nc" id="L50">        args.putInt(ARG_EVENT_ID, eventId);</span>
+<span class="nc" id="L51">        args.putString(ARG_EVENT_NAME, eventName);</span>
+<span class="nc" id="L52">        fragment.setArguments(args);</span>
+
+<span class="nc" id="L54">        return fragment;</span>
+    }
+
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+<span class="nc" id="L61">        View view = inflater.inflate(R.layout.sheet_my_event_reviews, container, false);</span>
+
+
+
+<span class="nc" id="L65">        eventNameTv = view.findViewById(R.id.my_event_name);</span>
+<span class="nc" id="L66">        listOfReviewsRv = view.findViewById(R.id.list_of_reviews_rv);</span>
+<span class="nc" id="L67">        listOfReviewsRv.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        assert getArguments() != null;</span>
+<span class="nc" id="L70">        userDetails = getArguments().getString(ARG_USER_DETAILS);</span>
+
+
+<span class="nc" id="L73">        eventName = getArguments().getString(ARG_EVENT_NAME);</span>
+<span class="nc" id="L74">        eventId = getArguments().getInt(ARG_EVENT_ID);</span>
+
+<span class="nc" id="L76">        eventNameTv.setText(eventName);</span>
+<span class="nc" id="L77">        getReviews(eventId);</span>
+
+
+<span class="nc" id="L80">        return view;</span>
+    }
+
+    private void setUpAdapter(JSONArray reviewList){
+<span class="nc" id="L84">        Log.d(&quot;REVIEWS&quot;, reviewList.toString());</span>
+<span class="nc" id="L85">        adapter = new reviewAdapter(requireContext(), userDetails, reviewList);</span>
+<span class="nc" id="L86">        listOfReviewsRv.setAdapter(adapter);</span>
+<span class="nc" id="L87">    }</span>
+
+
+    private void getReviews(int eventId){
+<span class="nc" id="L91">        String url= &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/reviews/event/&quot; + eventId + &quot;/reviews&quot;;</span>
+
+<span class="nc" id="L93">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+<span class="nc" id="L97">                new Response.Listener&lt;JSONObject&gt;() {</span>
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+
+<span class="nc" id="L103">                            setUpAdapter(response.getJSONArray(&quot;reviews&quot;));</span>
+<span class="nc" id="L104">                        } catch (JSONException e) {</span>
+<span class="nc" id="L105">                            throw new RuntimeException(e);</span>
+<span class="nc" id="L106">                        }</span>
+
+
+<span class="nc" id="L109">                    }</span>
+
+
+                },
+<span class="nc" id="L113">                new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L116">                        Log.d(&quot;VOLLEY ERROR&quot;, error.toString());</span>
+<span class="nc" id="L117">                    }</span>
+                }
+
+        );
+
+<span class="nc" id="L122">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

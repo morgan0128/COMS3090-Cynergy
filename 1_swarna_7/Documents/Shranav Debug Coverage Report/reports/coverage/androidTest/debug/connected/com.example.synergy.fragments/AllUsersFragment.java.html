@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllUsersFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">AllUsersFragment.java</span></div><h1>AllUsersFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SearchView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.R;
+import com.example.synergy.adapters.UserAdapter;
+import com.example.synergy.items.User;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+<span class="fc" id="L34">public class AllUsersFragment extends Fragment {</span>
+
+    private String userDetailString;
+    public UserAdapter adapter;
+    public List&lt;User&gt; users;
+    public RecyclerView recyclerView;
+    private SearchView searchUsers;
+<span class="fc" id="L41">    private final Set&lt;Integer&gt; excludedIds = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L43">    public AllUsersFragment() {</span>
+        // Required empty public constructor
+<span class="fc" id="L45">    }</span>
+
+    public static AllUsersFragment newInstance(String userDetails) {
+<span class="fc" id="L48">        AllUsersFragment fragment = new AllUsersFragment();</span>
+<span class="fc" id="L49">        Bundle args = new Bundle();</span>
+<span class="fc" id="L50">        args.putString(&quot;userDetails&quot;, userDetails);</span>
+<span class="fc" id="L51">        fragment.setArguments(args);</span>
+<span class="fc" id="L52">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        // Inflate the fragment layout (create a layout file called fragment_friends_list.xml)
+<span class="fc" id="L61">        return inflater.inflate(R.layout.fragment_all_user, container, false);</span>
+
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+<span class="fc" id="L67">        super.onViewCreated(view, savedInstanceState);</span>
+
+        // Retrieve data passed to fragment
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (getArguments() != null) {</span>
+<span class="fc" id="L71">            userDetailString = getArguments().getString(&quot;userDetails&quot;);</span>
+        }
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        assert userDetailString != null;</span>
+<span class="fc" id="L74">        Log.d(&quot;string&quot;, userDetailString);</span>
+
+<span class="fc" id="L76">        initUI(view);</span>
+<span class="fc" id="L77">        setupAdapter();</span>
+
+<span class="fc" id="L79">        setupSearchBar(view);</span>
+
+        try {
+<span class="fc" id="L82">            fetchExcludedUsersAndfetchAllUsers();</span>
+<span class="nc" id="L83">        } catch (JSONException e) {</span>
+<span class="nc" id="L84">            throw new RuntimeException(e);</span>
+<span class="fc" id="L85">        }</span>
+<span class="fc" id="L86">    }</span>
+
+
+    private void setupSearchBar(View view){
+<span class="fc" id="L90">        searchUsers = view.findViewById(R.id.searchUsers);</span>
+<span class="fc" id="L91">        searchUsers.setOnQueryTextListener(new SearchView.OnQueryTextListener(){</span>
+            @Override
+            public boolean onQueryTextSubmit(String query){
+<span class="nc" id="L94">                filterUsers(query);</span>
+<span class="nc" id="L95">                return true;</span>
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText){
+<span class="nc" id="L100">                filterUsers(newText);</span>
+<span class="nc" id="L101">                return true;</span>
+            }
+        });
+<span class="fc" id="L104">    }</span>
+    private void setupAdapter(){
+<span class="fc" id="L106">        users = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L107">        adapter = new UserAdapter(requireContext(), users, userDetailString);</span>
+<span class="fc" id="L108">        adapter.setOnUserActionListener(friendId -&gt; {</span>
+            // Instantly remove from UI
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            for (int i = 0; i &lt; users.size(); i++) {</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                if (users.get(i).getId() == friendId) {</span>
+<span class="nc" id="L112">                    users.remove(i);</span>
+<span class="nc" id="L113">                    adapter.notifyItemRemoved(i);</span>
+<span class="nc" id="L114">                    break;</span>
+                }
+            }
+<span class="nc" id="L117">        });</span>
+<span class="fc" id="L118">        recyclerView.setAdapter(adapter);</span>
+<span class="fc" id="L119">    }</span>
+
+    private void initUI(View view){
+        // Initialize views
+<span class="fc" id="L123">        recyclerView = view.findViewById(R.id.recyclerView);</span>
+<span class="fc" id="L124">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+<span class="fc" id="L125">    }</span>
+
+    private void filterUsers(String text){
+<span class="nc" id="L128">        List&lt;User&gt; filteredList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        for (User user: users){</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (user.getName().toLowerCase().contains(text.toLowerCase())){</span>
+<span class="nc" id="L131">                filteredList.add(user);</span>
+            }
+<span class="nc" id="L133">        }</span>
+<span class="nc" id="L134">        adapter.updateList(filteredList);</span>
+<span class="nc" id="L135">    }</span>
+
+
+    @Override
+    public void onResume() {
+<span class="fc" id="L140">        super.onResume();</span>
+        try {
+<span class="fc" id="L142">            fetchExcludedUsersAndfetchAllUsers();</span>
+<span class="nc" id="L143">        } catch (JSONException e) {</span>
+<span class="nc" id="L144">            Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L145">        }</span>
+<span class="fc" id="L146">    }</span>
+
+    private void fetchExcludedUsersAndfetchAllUsers() throws JSONException {
+<span class="fc" id="L149">        JSONObject userDetail = new JSONObject(userDetailString);</span>
+<span class="fc" id="L150">        int userId = userDetail.getInt(&quot;id&quot;);</span>
+
+<span class="fc" id="L152">        excludedIds.add(userId);</span>
+
+<span class="fc" id="L154">        String friendurl = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/&quot; + userId;</span>
+
+
+<span class="fc" id="L157">        JsonArrayRequest friendReq = new JsonArrayRequest(Request.Method.GET, friendurl, null,</span>
+                response -&gt; {
+<span class="fc" id="L159">                    handleExcludingUsersaAndFriends(response, userId);</span>
+<span class="fc" id="L160">                },</span>
+<span class="nc" id="L161">                volleyError -&gt; fetchAllUsers()</span>
+        );
+
+<span class="fc" id="L164">        VolleySingleton.getInstance(getContext()).addToRequestQueue(friendReq);</span>
+
+<span class="fc" id="L166">    }</span>
+
+
+    private void handleExcludingUsersaAndFriends(JSONArray response, int userId){
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+            try {
+<span class="fc" id="L173">                JSONObject friendObj = response.getJSONObject(i).getJSONObject(&quot;friend&quot;);</span>
+<span class="fc" id="L174">                excludedIds.add(friendObj.getInt(&quot;friendId&quot;));</span>
+<span class="nc" id="L175">            } catch (JSONException e) {</span>
+<span class="nc" id="L176">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L177">            }</span>
+        }
+
+<span class="fc" id="L180">        fetchPendingFriendRequests(userId);</span>
+
+<span class="fc" id="L182">    }</span>
+
+    private void handleExcludingpendingRequests(JSONArray pendingResp){
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        for (int i = 0; i &lt; pendingResp.length(); i++) {</span>
+            try {
+<span class="fc" id="L187">                JSONObject sent = (JSONObject) pendingResp.get(i);</span>
+<span class="fc" id="L188">                JSONObject pendingPerson = sent.getJSONObject(&quot;friend&quot;);</span>
+<span class="fc" id="L189">                excludedIds.add(pendingPerson.getInt(&quot;id&quot;));</span>
+<span class="nc" id="L190">            } catch (JSONException e) {</span>
+<span class="nc" id="L191">                Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L192">            }</span>
+        }
+<span class="fc" id="L194">    }</span>
+    private void fetchPendingFriendRequests(int userId){
+<span class="fc" id="L196">        String pendingURL = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/pending/&quot;</span>
+                + userId + &quot;/sent&quot;;
+<span class="fc" id="L198">        JsonArrayRequest pendingReq = new JsonArrayRequest(Request.Method.GET, pendingURL, null,</span>
+                pendingResp -&gt; {
+<span class="fc" id="L200">                    handleExcludingpendingRequests(pendingResp);</span>
+<span class="fc" id="L201">                    fetchAllUsers();</span>
+<span class="fc" id="L202">                },</span>
+<span class="nc" id="L203">                volleyError -&gt; fetchAllUsers()</span>
+        );
+<span class="fc" id="L205">        VolleySingleton.getInstance(getContext()).addToRequestQueue(pendingReq);</span>
+<span class="fc" id="L206">    }</span>
+
+    private void fetchAllUsers() {
+<span class="fc" id="L209">        String url = &quot;https://0010ad92-2045-4d77-8aa1-a71ce691fb82.mock.pstmn.io/getFriends&quot;;</span>
+<span class="fc" id="L210">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/accounts&quot;;</span>
+
+
+<span class="fc" id="L213">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+                this::setupAllUsers,
+                error -&gt; {
+<span class="nc" id="L219">                    Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L220">                    Toast.makeText(requireContext(), &quot;Failed to load friends&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L221">                }</span>
+        );
+
+<span class="fc" id="L224">        VolleySingleton.getInstance(getContext()).addToRequestQueue(request);</span>
+
+<span class="fc" id="L226">    }</span>
+
+   @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+   private void setupAllUsers(JSONArray response){
+<span class="fc" id="L230">       users.clear();</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">       for (int i = 0; i &lt; response.length(); i++) {</span>
+           try {
+<span class="fc" id="L233">               JSONObject userDetail = new JSONObject(userDetailString);</span>
+<span class="fc" id="L234">               JSONObject friendObject = response.getJSONObject(i);</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">               if (userDetail.getInt(&quot;id&quot;) == friendObject.getInt(&quot;id&quot;)</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">                       || excludedIds.contains(friendObject.getInt(&quot;id&quot;))){</span>
+<span class="fc" id="L237">                   continue;</span>
+               }
+<span class="fc" id="L239">               users.add(new User(friendObject));</span>
+<span class="nc" id="L240">           } catch (JSONException e) {</span>
+<span class="nc" id="L241">               Log.d(&quot;ERROR&quot;, e.toString());</span>
+<span class="fc" id="L242">           }</span>
+       }
+<span class="fc" id="L244">       adapter.notifyDataSetChanged();</span>
+<span class="fc" id="L245">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

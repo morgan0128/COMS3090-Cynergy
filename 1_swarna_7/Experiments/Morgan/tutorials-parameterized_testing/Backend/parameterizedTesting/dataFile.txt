@@ -1,0 +1,4 @@
+1000.0,200.0,250.0,true,null
+1000.0,200.0,250.0,true,null
+1000.0,50.0,250.0,false,error.insufficient.down.payment
+1000.0,200.0,150.0,false,error.insufficient.funds.for.down.payment

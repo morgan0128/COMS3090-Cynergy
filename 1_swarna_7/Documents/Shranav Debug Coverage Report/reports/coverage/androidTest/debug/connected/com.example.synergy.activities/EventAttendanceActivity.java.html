@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventAttendanceActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">EventAttendanceActivity.java</span></div><h1>EventAttendanceActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.adapters.AttendeeAdapter;
+import com.example.synergy.items.Attendee;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+/**
+ * Activity that displays attendance information for a specific event.
+ *
+ * &lt;p&gt;This screen shows:&lt;/p&gt;
+ * &lt;ul&gt;
+ *     &lt;li&gt;&lt;b&gt;Event name&lt;/b&gt;&lt;/li&gt;
+ *     &lt;li&gt;&lt;b&gt;Total attendee count&lt;/b&gt;&lt;/li&gt;
+ *     &lt;li&gt;&lt;b&gt;List of attendees in a clean format&lt;/b&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;
+ * The activity fetches attendance details from our backend server using a Volley GET request.
+ * Also, has a button to enter the event's chat room.
+ * &lt;/p&gt;
+ */
+<span class="nc" id="L44">public class EventAttendanceActivity extends AppCompatActivity {</span>
+
+
+    /** TextView displaying the event name. */
+    private TextView eventNameView;
+
+    /** TextView showing the total number of attendees */
+    private TextView attendeeCountTv;
+
+    /** RecyclerView listing all attendees. */
+    private RecyclerView attendeesRv;
+
+    /** Button that will lead to the chatroom of that event. */
+    private Button chatButton;
+
+    /** List containing attendee objects returned by the API. */
+<span class="nc" id="L60">    private final ArrayList&lt;Attendee&gt; attendees = new ArrayList&lt;&gt;();</span>
+
+    /** Adapter used to populate the RecyclerView with attendee data. */
+    private AttendeeAdapter adapter;
+
+    /** Name of the event returned from the server. */
+    private String eventName;
+
+    /** Base URL for events. */
+    private static final String BASE_URL =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/&quot;;
+
+    /** Event ID to be passed from previous activity */
+    private int eventId;
+
+    /** ID of the user. */
+    private int userId;
+
+    /** Email detail of the user. */
+    private String emailId;
+
+    /**
+     * Called when the activity starts.
+     * Initializes the UI, reads the data from the intent, sets up the RecyclerView,
+     * and fetches attendance information from the server.
+     *
+     * @param savedInstanceState saved state bundle
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L90">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L91">        setContentView(R.layout.activity_event_attendance);</span>
+
+<span class="nc" id="L93">        initUI(); //initalize UI</span>
+<span class="nc" id="L94">        readIntentData(); // read intent that was sent</span>
+<span class="nc" id="L95">        setupRecycler();</span>
+<span class="nc" id="L96">        fetchAttendance(); // getting attendance data from server</span>
+
+<span class="nc" id="L98">        chatButton = findViewById(R.id.chat_event_button); // chat button that will lead to that event's chat</span>
+
+<span class="nc" id="L100">        chatButton.setOnClickListener(new View.OnClickListener() {</span>
+            /**
+             * Clicking on the button leads to the chat for this event.
+             * We will send necessary intent data to the chat.
+             * @param v the clicked view
+             */
+            @Override
+            public void onClick(View v) {
+                // all necessary data to be sent
+<span class="nc" id="L109">                Intent intent = new Intent(EventAttendanceActivity.this, EventChatActivity.class);</span>
+<span class="nc" id="L110">                intent.putExtra(&quot;user_id&quot;, userId);</span>
+<span class="nc" id="L111">                intent.putExtra(&quot;event_name&quot;, eventName);</span>
+<span class="nc" id="L112">                intent.putExtra(&quot;event_id&quot;, eventId);</span>
+<span class="nc" id="L113">                intent.putExtra(&quot;email_id&quot;, emailId);</span>
+<span class="nc" id="L114">                startActivity(intent); // go to chat activity</span>
+<span class="nc" id="L115">            }</span>
+        });
+<span class="nc" id="L117">    }</span>
+
+    /**
+     * Initializes all UI components on the screen.
+     * This is basically seperating my UI code from the rest.
+     * Also sets up the back button which we need.
+     */
+    private void initUI() {
+<span class="nc" id="L125">        eventNameView = findViewById(R.id.event_name);</span>
+<span class="nc" id="L126">        attendeeCountTv = findViewById(R.id.attendee_count);</span>
+<span class="nc" id="L127">        attendeesRv = findViewById(R.id.attendeesRecyclerView);</span>
+
+<span class="nc" id="L129">        ImageButton back = findViewById(R.id.back_button); //back button</span>
+<span class="nc" id="L130">        back.setOnClickListener(v -&gt; finish()); // goes back</span>
+<span class="nc" id="L131">    }</span>
+
+    /**
+     * Reads the intent data passed from the previous activity.
+     * Gets event ID, user ID, and email ID from the bundle.
+     * If the event ID is invalid, the activity closes.
+     */
+    private void readIntentData() {
+<span class="nc" id="L139">        Intent i = getIntent(); //get intent</span>
+
+<span class="nc" id="L141">        eventId = i.getIntExtra(&quot;event_id&quot;, 1); //default value 1, just in case</span>
+<span class="nc" id="L142">        userId = i.getIntExtra(&quot;user_id&quot;, 1);</span>
+<span class="nc" id="L143">        emailId = i.getStringExtra(&quot;emailId&quot;);</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (eventId &lt; 0) { // check if event ID is valid, otherwise go back. basically no negative values.</span>
+<span class="nc" id="L146">            showToast(&quot;Invalid event&quot;); //show toast on screen.</span>
+<span class="nc" id="L147">            finish();</span>
+        }
+<span class="nc" id="L149">    }</span>
+
+    /**
+     * Sets up the RecyclerView used to display all attendees.
+     * Creates the adapter and attaches it to the layout manager.
+     */
+    private void setupRecycler() {
+<span class="nc" id="L156">        adapter = new AttendeeAdapter(attendees, this);</span>
+<span class="nc" id="L157">        attendeesRv.setLayoutManager(new LinearLayoutManager(this));</span>
+<span class="nc" id="L158">        attendeesRv.setAdapter(adapter);</span>
+<span class="nc" id="L159">    }</span>
+
+    /**
+     * Sends a GET request to our backend server to get the attendance information.
+     * The response is handled by handleAttendanceResponse().
+     */
+    private void fetchAttendance() {
+<span class="nc" id="L166">        String url = BASE_URL + eventId + &quot;/attendees&quot;; //url to be used for GET req</span>
+
+<span class="nc" id="L168">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+
+<span class="nc" id="L174">                    handleAttendanceResponse(response);</span>
+<span class="nc" id="L175">                },</span>
+<span class="nc" id="L176">                error -&gt; showToast(&quot;Could not load attendance&quot;) //error handling</span>
+        );
+
+<span class="nc" id="L179">        Volley.newRequestQueue(this).add(req); //adding to queue</span>
+<span class="nc" id="L180">    }</span>
+
+    /**
+     * Handles the JSON response returned by the server.
+     * Updates event name, attendee count, and the attendee list.
+     *
+     * @param json the server response
+     */
+    private void handleAttendanceResponse(JSONObject json) {
+
+<span class="nc" id="L190">        attendees.clear(); // clearing previous data if any</span>
+
+<span class="nc" id="L192">        eventName = json.optString(&quot;eventName&quot;, &quot;Event&quot;);</span>
+<span class="nc" id="L193">        eventNameView.setText(eventName); //setting eventname</span>
+
+<span class="nc" id="L195">        int attendeeCount = json.optInt(&quot;attendeeCount&quot;, 0); //default 0</span>
+<span class="nc" id="L196">        attendeeCountTv.setText(attendeeCount + &quot; going&quot;); //setting attendee count</span>
+
+<span class="nc" id="L198">        JSONArray arr = json.optJSONArray(&quot;attendees&quot;);   // get the attendees array from the response</span>
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (arr != null) {   // make sure the array exists</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {   // loop through each attendee object</span>
+<span class="nc" id="L202">                JSONObject o = arr.optJSONObject(i);   // get the JSON object at index i</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                if (o == null) continue;               // skip if it's null</span>
+
+                //otherwise
+<span class="nc" id="L206">                Attendee a = Attendee.fromJson(o);     // convert JSON into an Attendee object</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                if (a != null) attendees.add(a);       // add to the list if valid</span>
+            }
+        }
+
+<span class="nc" id="L211">        adapter.notifyDataSetChanged();   // refresh the RecyclerView to show the new data</span>
+
+<span class="nc" id="L213">    }</span>
+
+    /**
+     * Displays a toast message on the screen. mostly for error handling and testing.
+     *
+     * @param msg the message text
+     */
+    private void showToast(String msg) {
+<span class="nc" id="L221">        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L222">    }</span>
+
+    /**
+     * Shows a simple dialog displaying server response text. used for testing.
+     * The text is placed inside a scrollable view.
+     */
+    private void showStatusDialog(String title, String content) {
+
+        // Create dialog builder
+<span class="nc" id="L231">        androidx.appcompat.app.AlertDialog.Builder builder =</span>
+                new androidx.appcompat.app.AlertDialog.Builder(this);
+
+        // TextView for showing the content
+<span class="nc" id="L235">        TextView tv = new TextView(this);</span>
+<span class="nc" id="L236">        tv.setText(content);</span>
+<span class="nc" id="L237">        tv.setPadding(40, 40, 40, 40);</span>
+<span class="nc" id="L238">        tv.setTextSize(16f);</span>
+
+        // Make content scrollable
+<span class="nc" id="L241">        ScrollView scroll = new ScrollView(this);</span>
+<span class="nc" id="L242">        scroll.addView(tv);</span>
+
+        // Set title
+<span class="nc" id="L245">        builder.setTitle(title);</span>
+<span class="nc" id="L246">        builder.setView(scroll);</span>
+
+        // Add a simple Close button
+<span class="nc" id="L249">        builder.setPositiveButton(&quot;Close&quot;, null);</span>
+
+        // show the dialogue
+<span class="nc" id="L252">        builder.show();</span>
+<span class="nc" id="L253">    }</span>
+
+}
+
+
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

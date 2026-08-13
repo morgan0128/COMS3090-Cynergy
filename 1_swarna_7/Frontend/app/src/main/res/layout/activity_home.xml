@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_home_gradient">
+
+    <!-- Greeting -->
+    <TextView
+        android:id="@+id/testView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="36dp"
+        android:text="Welcome back!"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="#0F172A"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Top Right Icons (notifications, admin, file) -->
+    <LinearLayout
+        android:id="@+id/topActionsGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="@id/testView"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/eventInviteButton"
+            android:backgroundTint="@android:color/transparent"
+            android:text="Invites"
+            android:textColor="@color/black"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            />
+
+
+        <!-- Notifications -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/notification"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="4dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text=""
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_notifications"
+            app:iconTint="#64748B" />
+
+        <!-- Admin -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/adminButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="4dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text=""
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_admin_panel"
+            app:iconTint="#64748B" />
+
+        <!-- File a Request -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/fileTicketButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="4dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text=""
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_ticket"
+            app:iconTint="#64748B" />
+    </LinearLayout>
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/subtitleText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
+        android:text="Stay connected with events, friends, and updates that matter."
+        android:textSize="14sp"
+        android:textColor="#64748B"
+        app:layout_constraintTop_toBottomOf="@id/testView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Hero Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/heroCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="64dp"
+        android:minHeight="210dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="10dp"
+        app:layout_constraintTop_toBottomOf="@id/subtitleText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="28dp">
+
+            <TextView
+                android:id="@+id/heroTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="What’s happening today?"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#0F172A" />
+
+            <TextView
+                android:id="@+id/heroSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Jump into events, reply to friends, or manage your profile in seconds."
+                android:textSize="14sp"
+                android:textColor="#475569" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/eventButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Browse Events"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:backgroundTint="#6366F1"
+                app:icon="@drawable/ic_event"
+                app:iconTint="@android:color/white" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Bottom Navigation -->
+    <LinearLayout
+        android:id="@+id/bottomNavGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_bottom_nav"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/nav_events"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Events"
+            android:textSize="11sp"
+            android:textColor="#334155"
+            android:textAllCaps="false"
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_event"
+            app:iconSize="26dp"
+            app:iconTint="#334155"
+            app:iconGravity="textTop" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/friendsButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Friends"
+            android:textSize="11sp"
+            android:textColor="#334155"
+            android:textAllCaps="false"
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_friends"
+            app:iconSize="26dp"
+            app:iconTint="#334155"
+            app:iconGravity="textTop" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/profileButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Profile"
+            android:textSize="11sp"
+            android:textColor="#334155"
+            android:textAllCaps="false"
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_profile"
+            app:iconSize="26dp"
+            app:iconTint="#334155"
+            app:iconGravity="textTop" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Settings"
+            android:textSize="11sp"
+            android:textColor="#334155"
+            android:textAllCaps="false"
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_settings"
+            app:iconSize="26dp"
+            app:iconTint="#334155"
+            app:iconGravity="textTop" />
+    </LinearLayout>
+
+    <!-- Floating Create Profile (+) above nav -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/create_profile_button"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="52dp"
+        android:backgroundTint="#6366F1"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:text="+"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        app:cornerRadius="22dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavGroup"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="7dp"
+        android:orientation="vertical"
+        android:outlineProvider="bounds"
+        android:padding="28dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="10dp"
+        app:layout_constraintBottom_toTopOf="@+id/create_profile_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Check out Event Reviews!"
+            android:textColor="@color/black"
+            android:textSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goToEventReviews"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="Go to Reviews" />
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

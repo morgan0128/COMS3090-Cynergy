@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>mapEventListSheet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.sheets</a> &gt; <span class="el_source">mapEventListSheet.java</span></div><h1>mapEventListSheet.java</h1><pre class="source lang-java linenums">package com.example.synergy.sheets;
+
+import android.content.Context;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.EventNodeAdapter;
+import com.example.synergy.items.EventItem;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L36">public class mapEventListSheet extends BottomSheetDialogFragment {</span>
+
+    private RecyclerView recyclerView;
+    private EventNodeAdapter adapter;
+<span class="nc" id="L40">    private List&lt;EventItem&gt; eventList = new ArrayList&lt;&gt;();</span>
+    private Button delete_node;
+
+    private static final String ARG_EVENTS = &quot;events_list&quot;;
+    private static final String ARG_USER_DETAILS = &quot;userDetails&quot;;
+    private static final String ARG_MAP_NODE_ID = &quot;id&quot;;
+    private String associatedEvents;
+    private JSONObject userDetails;
+    private JSONArray userEvents;
+    private String userDetailsString;
+    private int map_node_id;
+
+    public static mapEventListSheet newInstance(JSONArray events, String user, int map_node_id) {
+<span class="nc" id="L53">        mapEventListSheet fragment = new mapEventListSheet();</span>
+<span class="nc" id="L54">        Bundle args = new Bundle();</span>
+<span class="nc" id="L55">        args.putString(ARG_USER_DETAILS, user);</span>
+<span class="nc" id="L56">        args.putString(ARG_EVENTS, events.toString());</span>
+<span class="nc" id="L57">        args.putInt(ARG_MAP_NODE_ID, map_node_id);</span>
+<span class="nc" id="L58">        fragment.setArguments(args);</span>
+
+<span class="nc" id="L60">        return fragment;</span>
+    }
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+<span class="nc" id="L66">        View view = inflater.inflate(R.layout.fragment_all_events, container, false);</span>
+
+<span class="nc" id="L68">        recyclerView = view.findViewById(R.id.recyclerView);</span>
+<span class="nc" id="L69">        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+<span class="nc" id="L70">        delete_node = view.findViewById(R.id.delete_map_node);</span>
+<span class="nc" id="L71">        delete_node.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L73">        Bundle args = getArguments();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (args != null){</span>
+<span class="nc" id="L75">            associatedEvents = args.getString(ARG_EVENTS);</span>
+<span class="nc" id="L76">            Log.d(&quot;LIST map&quot;, associatedEvents.toString());</span>
+<span class="nc" id="L77">            Log.d(&quot;EVENTS FOR MAP&quot;, associatedEvents.toString());</span>
+<span class="nc" id="L78">            userDetailsString = args.getString(ARG_USER_DETAILS);</span>
+<span class="nc" id="L79">            map_node_id = args.getInt(ARG_MAP_NODE_ID);</span>
+
+
+
+
+            try {
+<span class="nc" id="L85">                userDetails = new JSONObject(userDetailsString);</span>
+<span class="nc" id="L86">            } catch (JSONException e) {</span>
+<span class="nc" id="L87">                throw new RuntimeException(e);</span>
+<span class="nc" id="L88">            }</span>
+
+
+        }
+        try {
+<span class="nc" id="L93">            adapter = new EventNodeAdapter(requireContext(), eventList, null, false, userDetailsString, getParentFragmentManager());</span>
+<span class="nc" id="L94">        } catch (JSONException e) {</span>
+<span class="nc" id="L95">            throw new RuntimeException(e);</span>
+<span class="nc" id="L96">        }</span>
+<span class="nc" id="L97">        recyclerView.setAdapter(adapter);</span>
+
+        try {
+<span class="nc" id="L100">            populateEvents(new JSONArray(associatedEvents));</span>
+<span class="nc" id="L101">            makeMyEventRequest(userDetails.getInt(&quot;id&quot;));</span>
+<span class="nc" id="L102">        } catch (JSONException e) {</span>
+<span class="nc" id="L103">            throw new RuntimeException(e);</span>
+<span class="nc" id="L104">        }</span>
+
+
+
+<span class="nc" id="L108">        delete_node.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+
+                try {
+<span class="nc" id="L113">                    makeDeleteNodeRequest();</span>
+<span class="nc" id="L114">                } catch (JSONException e) {</span>
+<span class="nc" id="L115">                    throw new RuntimeException(e);</span>
+<span class="nc" id="L116">                }</span>
+<span class="nc" id="L117">            }</span>
+        });
+
+
+
+
+<span class="nc" id="L123">        return view;</span>
+    }
+
+    private void makeMyEventRequest(int id) {
+<span class="nc" id="L127">        RequestQueue queue = Volley.newRequestQueue(requireContext());</span>
+
+
+<span class="nc" id="L130">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/user/&quot; +id;</span>
+
+<span class="nc" id="L132">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, server_url, null,</span>
+<span class="nc" id="L133">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+<span class="nc" id="L136">                        userEvents = response;</span>
+<span class="nc" id="L137">                        adapter.userEvents = userEvents;</span>
+<span class="nc" id="L138">                        adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L139">                    }</span>
+<span class="nc" id="L140">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+<span class="nc" id="L144">            }</span>
+        });
+<span class="nc" id="L146">        queue.add(request);</span>
+<span class="nc" id="L147">    }</span>
+
+
+    private void populateEvents(JSONArray response) {
+        /**
+         * Populate events
+         */
+<span class="nc" id="L154">        eventList.clear();</span>
+        try {
+//            Takes in JSONArray object from response, loops over it
+//            extracts event details and calls EventAdapter to create a event item
+<span class="nc" id="L158">            JSONArray jsonArray = response;</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            for (int i = 0; i &lt; jsonArray.length(); i++) {</span>
+<span class="nc" id="L160">                JSONObject obj = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L161">                eventList.add(new EventItem(</span>
+<span class="nc" id="L162">                        obj.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L163">                        obj.optString(&quot;eventName&quot;, &quot;Untitled Event&quot;),</span>
+<span class="nc" id="L164">                        obj.optString(&quot;eventTime&quot;, &quot;00:00&quot;),</span>
+<span class="nc" id="L165">                        obj.optString(&quot;eventLocation&quot;, &quot;Unknown Location&quot;),</span>
+<span class="nc" id="L166">                        obj.optString(&quot;eventDate&quot;, &quot;1970-01-01&quot;),</span>
+<span class="nc" id="L167">                        obj.optString(&quot;description&quot;, &quot;No Description&quot;)</span>
+                ));
+<span class="nc" id="L169">                Log.d(&quot;ADDED TO LIST&quot;, eventList.get(i).getEventName().toString());</span>
+            }
+<span class="nc" id="L171">        } catch (Exception e) {</span>
+<span class="nc" id="L172">            Log.d(&quot;MAP LIST ERROR&quot;, e.toString());</span>
+<span class="nc" id="L173">        }</span>
+
+<span class="nc" id="L175">        adapter.updateFullList(eventList);</span>
+<span class="nc" id="L176">        adapter.notifyDataSetChanged();</span>
+
+<span class="nc" id="L178">    }</span>
+
+    private void makeDeleteNodeRequest() throws JSONException {
+
+<span class="nc" id="L182">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/map/node/delete/&quot; + map_node_id;</span>
+<span class="nc" id="L183">        StringRequest request = new StringRequest(</span>
+                Request.Method.DELETE,
+                server_url,
+<span class="nc" id="L186">                new Response.Listener&lt;String&gt;() {</span>
+                    @Override
+                    public void onResponse(String s) {
+<span class="nc" id="L189">                        showStatusDialog(&quot;Success&quot;, &quot;Map Node Deleted&quot;);</span>
+<span class="nc" id="L190">                    }</span>
+<span class="nc" id="L191">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+<span class="nc" id="L194">                showStatusDialog(&quot;Failure&quot;, &quot;Object didn't delete&quot;);</span>
+<span class="nc" id="L195">            }</span>
+        });
+
+<span class="nc" id="L198">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+
+
+
+<span class="nc" id="L202">    }</span>
+
+    private void showStatusDialog(String title, String message) {
+<span class="nc" id="L205">        new androidx.appcompat.app.AlertDialog.Builder(requireContext())</span>
+<span class="nc" id="L206">                .setTitle(title)</span>
+<span class="nc" id="L207">                .setMessage(message)</span>
+<span class="nc" id="L208">                .setCancelable(false)</span>
+<span class="nc" id="L209">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss())</span>
+<span class="nc" id="L210">                .show();</span>
+<span class="nc" id="L211">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

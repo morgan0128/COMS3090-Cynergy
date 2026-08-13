@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserDetailActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">AdminUserDetailActivity.java</span></div><h1>AdminUserDetailActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+
+import org.json.JSONObject;
+
+<span class="nc" id="L20">public class AdminUserDetailActivity extends AppCompatActivity {</span>
+
+    private TextView nameText, emailText, tierText;
+    private Button tier1Btn, tier2Btn, revokeBtn, deleteBtn;
+
+    private int userId;
+<span class="nc" id="L26">    private int tier = 0; // always recomputed</span>
+
+    private static final String BASE = &quot;http://coms-3090-016.class.las.iastate.edu:8080&quot;;
+
+    public static void start(Context ctx, int userId) {
+<span class="nc" id="L31">        Intent i = new Intent(ctx, AdminUserDetailActivity.class);</span>
+<span class="nc" id="L32">        i.putExtra(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L33">        ctx.startActivity(i);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L38">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L39">        setContentView(R.layout.activity_admin_user_detail);</span>
+
+<span class="nc" id="L41">        userId = getIntent().getIntExtra(&quot;userId&quot;, -1);</span>
+
+<span class="nc" id="L43">        initViews();</span>
+
+<span class="nc" id="L45">        findViewById(R.id.back_button).setOnClickListener(v -&gt; finish());</span>
+
+<span class="nc" id="L47">        tier1Btn.setOnClickListener(v -&gt; postTier(1));</span>
+<span class="nc" id="L48">        tier2Btn.setOnClickListener(v -&gt; handleTier2());</span>
+<span class="nc" id="L49">        revokeBtn.setOnClickListener(v -&gt; revokeTier2());</span>
+<span class="nc" id="L50">        deleteBtn.setOnClickListener(v -&gt; deleteAdmin());</span>
+
+<span class="nc" id="L52">        loadUserAccountInfo();   // fetch username/email</span>
+<span class="nc" id="L53">        loadPermissions();       // fetch admin + tier2 status</span>
+<span class="nc" id="L54">    }</span>
+
+    private void initViews() {
+<span class="nc" id="L57">        nameText = findViewById(R.id.nameText);</span>
+<span class="nc" id="L58">        emailText = findViewById(R.id.emailText);</span>
+<span class="nc" id="L59">        tierText = findViewById(R.id.tierText);</span>
+
+<span class="nc" id="L61">        tier1Btn = findViewById(R.id.grantTier1Btn);</span>
+<span class="nc" id="L62">        tier2Btn = findViewById(R.id.grantTier2Btn);</span>
+<span class="nc" id="L63">        revokeBtn = findViewById(R.id.revokeTier2Btn);</span>
+<span class="nc" id="L64">        deleteBtn = findViewById(R.id.deleteAdminBtn);</span>
+<span class="nc" id="L65">    }</span>
+
+    private void loadUserAccountInfo() {
+<span class="nc" id="L68">        String url = BASE + &quot;/api/accounts/&quot; + userId;</span>
+
+<span class="nc" id="L70">        StringRequest req = new StringRequest(Request.Method.GET, url,</span>
+                resp -&gt; {
+                    try {
+<span class="nc" id="L73">                        JSONObject o = new JSONObject(resp);</span>
+
+<span class="nc" id="L75">                        String name = o.optString(&quot;username&quot;, &quot;&quot;);</span>
+<span class="nc" id="L76">                        String email = o.optString(&quot;email&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L78">                        nameText.setText(name);</span>
+<span class="nc" id="L79">                        emailText.setText(email);</span>
+<span class="nc" id="L80">                    } catch (Exception e) {</span>
+<span class="nc" id="L81">                        e.printStackTrace();</span>
+<span class="nc" id="L82">                    }</span>
+<span class="nc" id="L83">                },</span>
+<span class="nc" id="L84">                err -&gt; toast(&quot;Failed to load user info&quot;)</span>
+        );
+
+<span class="nc" id="L87">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L88">    }</span>
+
+    private void loadPermissions() {
+<span class="nc" id="L91">        String url1 = BASE + &quot;/api/is/admin/&quot; + userId;</span>
+<span class="nc" id="L92">        String url2 = BASE + &quot;/api/is/adminT2/&quot; + userId;</span>
+
+<span class="nc" id="L94">        StringRequest req1 = new StringRequest(Request.Method.GET, url1,</span>
+                resp -&gt; {
+<span class="nc" id="L96">                    boolean isAdmin = Boolean.parseBoolean(resp.trim());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (!isAdmin) {</span>
+<span class="nc" id="L98">                        tier = 0;</span>
+<span class="nc" id="L99">                        updateUI();</span>
+                    } else {
+<span class="nc" id="L101">                        tier = 1;</span>
+<span class="nc" id="L102">                        loadTier2Check(url2);</span>
+                    }
+<span class="nc" id="L104">                },</span>
+                err -&gt; {
+<span class="nc" id="L106">                    toast(&quot;Failed to load admin status&quot;);</span>
+<span class="nc" id="L107">                    updateUI();</span>
+<span class="nc" id="L108">                }</span>
+        );
+
+<span class="nc" id="L111">        VolleySingleton.getInstance(this).addToRequestQueue(req1);</span>
+<span class="nc" id="L112">    }</span>
+
+    private void loadTier2Check(String url) {
+<span class="nc" id="L115">        StringRequest req2 = new StringRequest(Request.Method.GET, url,</span>
+                resp -&gt; {
+<span class="nc" id="L117">                    boolean isT2 = Boolean.parseBoolean(resp.trim());</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                    if (isT2) tier = 2;</span>
+<span class="nc" id="L119">                    updateUI();</span>
+<span class="nc" id="L120">                },</span>
+                err -&gt; {
+<span class="nc" id="L122">                    toast(&quot;Failed tier2 check&quot;);</span>
+<span class="nc" id="L123">                    updateUI();</span>
+<span class="nc" id="L124">                }</span>
+        );
+
+<span class="nc" id="L127">        VolleySingleton.getInstance(this).addToRequestQueue(req2);</span>
+<span class="nc" id="L128">    }</span>
+
+    private void updateUI() {
+<span class="nc" id="L131">        tierText.setText(&quot;Tier: &quot; + tier);</span>
+
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        tier1Btn.setEnabled(tier == 0);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        tier2Btn.setEnabled(tier &lt; 2);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        revokeBtn.setEnabled(tier == 2);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        deleteBtn.setEnabled(tier &gt; 0);</span>
+<span class="nc" id="L137">    }</span>
+
+    private void postTier(int newTier) {
+<span class="nc" id="L140">        String url = BASE + &quot;/api/grant/admin/&quot; + userId + &quot;/tier/&quot; + newTier;</span>
+
+<span class="nc" id="L142">        StringRequest req = new StringRequest(Request.Method.POST, url,</span>
+                resp -&gt; {
+<span class="nc" id="L144">                    toast(&quot;Granted Tier &quot; + newTier);</span>
+<span class="nc" id="L145">                    loadPermissions(); // refresh state from backend</span>
+<span class="nc" id="L146">                },</span>
+<span class="nc" id="L147">                err -&gt; logError(&quot;Grant Tier &quot; + newTier, err)</span>
+        );
+
+<span class="nc" id="L150">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L151">    }</span>
+
+    private void handleTier2() {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (tier == 1) {</span>
+<span class="nc" id="L155">            putTier(&quot;/api/admin/grantTier2/&quot; + userId);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        } else if (tier == 0) {</span>
+<span class="nc" id="L157">            postTier(2);</span>
+        } else {
+<span class="nc" id="L159">            toast(&quot;Already Tier 2&quot;);</span>
+        }
+<span class="nc" id="L161">    }</span>
+
+    private void revokeTier2() {
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (tier != 2) {</span>
+<span class="nc" id="L165">            toast(&quot;Not Tier 2&quot;);</span>
+<span class="nc" id="L166">            return;</span>
+        }
+<span class="nc" id="L168">        putTier(&quot;/api/admin/revokeTier2/&quot; + userId);</span>
+<span class="nc" id="L169">    }</span>
+
+    private void putTier(String path) {
+<span class="nc" id="L172">        StringRequest req = new StringRequest(Request.Method.PUT, BASE + path,</span>
+                resp -&gt; {
+<span class="nc" id="L174">                    toast(&quot;Updated&quot;);</span>
+<span class="nc" id="L175">                    loadPermissions(); // reload correct state</span>
+<span class="nc" id="L176">                },</span>
+<span class="nc" id="L177">                err -&gt; logError(&quot;PUT&quot;, err)</span>
+        );
+
+<span class="nc" id="L180">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L181">    }</span>
+
+    private void deleteAdmin() {
+<span class="nc" id="L184">        String url = BASE + &quot;/api/delete/admin/&quot; + userId;</span>
+
+<span class="nc" id="L186">        StringRequest req = new StringRequest(Request.Method.DELETE, url,</span>
+                resp -&gt; {
+<span class="nc" id="L188">                    toast(&quot;Admin removed&quot;);</span>
+<span class="nc" id="L189">                    loadPermissions();</span>
+<span class="nc" id="L190">                },</span>
+<span class="nc" id="L191">                err -&gt; logError(&quot;DELETE&quot;, err)</span>
+        );
+
+<span class="nc" id="L194">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L195">    }</span>
+
+    private void logError(String action, com.android.volley.VolleyError err) {
+        try {
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            String body = err.networkResponse != null ?</span>
+<span class="nc" id="L200">                    new String(err.networkResponse.data) : &quot;no response&quot;;</span>
+<span class="nc" id="L201">            Log.e(&quot;Admin&quot;, action + &quot;: &quot; + body);</span>
+<span class="nc" id="L202">        } catch (Exception e) {</span>
+<span class="nc" id="L203">            Log.e(&quot;Admin&quot;, action + &quot;: &quot; + err.toString());</span>
+<span class="nc" id="L204">        }</span>
+<span class="nc" id="L205">        toast(&quot;Server error&quot;);</span>
+<span class="nc" id="L206">    }</span>
+
+    private void toast(String t) {
+<span class="nc" id="L209">        Toast.makeText(this, t, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L210">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

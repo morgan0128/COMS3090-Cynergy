@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:background="@drawable/capsule_edit_text"
+    android:padding="10dp"
+    android:gravity="center_vertical"
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content">
+
+    <ImageView
+        android:src="@drawable/ic_check"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="10dp"
+        />
+
+    <TextView
+        android:id="@+id/toast_text"
+        android:text="Success!"
+        android:textColor="#FF9800"
+        android:textSize="16sp"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"/>
+</LinearLayout>

@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventInfoFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.fragments</a> &gt; <span class="el_source">EventInfoFragment.java</span></div><h1>EventInfoFragment.java</h1><pre class="source lang-java linenums">package com.example.synergy.fragments;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.adapters.FriendAdapter;
+import com.example.synergy.items.Friend;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L41">public class EventInfoFragment extends Fragment {</span>
+
+    // ---------------- UI ----------------
+    private TextView nameText, dateText, timeText, locationText, ownerText, attendeeChip;
+    private Button interestButton;
+    private ImageButton backButton;
+
+    // ---------------- Data ----------------
+    private int eventId;
+    private int userId;
+    private RecyclerView friendsRv;
+    private List&lt;Friend&gt; friends;
+    private FriendAdapter adapter;
+<span class="nc" id="L54">    private boolean isInterested = false;</span>
+    private String userDetailString;
+
+    private static final String BASE =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/events/&quot;;
+
+    // ----------------------------------------------------------
+    // Lifecycle
+    // ----------------------------------------------------------
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+<span class="nc" id="L69">        View view = inflater.inflate(R.layout.fragment_event_info, container, false);</span>
+
+<span class="nc" id="L71">        initUI(view);</span>
+<span class="nc" id="L72">        readArguments();</span>
+
+<span class="nc" id="L74">        friends = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L75">        adapter = new FriendAdapter(requireContext(), friends, userDetailString);</span>
+<span class="nc" id="L76">        friendsRv.setAdapter(adapter);</span>
+
+<span class="nc" id="L78">        getFriendsAttendingEvent();</span>
+
+        // Check interest using POST
+<span class="nc" id="L81">        checkInterestOnOpen();</span>
+
+        // Load attendance count
+<span class="nc" id="L84">        loadAttendanceCount();</span>
+
+        // Handle clicks
+<span class="nc" id="L87">        interestButton.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (isInterested) {</span>
+<span class="nc" id="L89">                leaveEvent();</span>
+            } else {
+<span class="nc" id="L91">                joinEvent();</span>
+            }
+<span class="nc" id="L93">        });</span>
+
+<span class="nc" id="L95">        return view;</span>
+    }
+
+    // ----------------------------------------------------------
+    // Initialization
+    // ----------------------------------------------------------
+    private void initUI(View view) {
+<span class="nc" id="L102">        nameText       = view.findViewById(R.id.event_name);</span>
+<span class="nc" id="L103">        dateText       = view.findViewById(R.id.event_date);</span>
+<span class="nc" id="L104">        timeText       = view.findViewById(R.id.event_time);</span>
+<span class="nc" id="L105">        locationText   = view.findViewById(R.id.event_location);</span>
+<span class="nc" id="L106">        ownerText      = view.findViewById(R.id.event_owner);</span>
+<span class="nc" id="L107">        attendeeChip   = view.findViewById(R.id.attendee_count_chip);</span>
+<span class="nc" id="L108">        interestButton = view.findViewById(R.id.interest_button);</span>
+<span class="nc" id="L109">        backButton     = view.findViewById(R.id.back_button);</span>
+<span class="nc" id="L110">        friendsRv      = view.findViewById(R.id.friendsAttending);</span>
+
+<span class="nc" id="L112">        friendsRv.setLayoutManager(new LinearLayoutManager(requireContext()));</span>
+
+<span class="nc" id="L114">        backButton.setOnClickListener(v -&gt; requireActivity().onBackPressed());</span>
+<span class="nc" id="L115">        updateButton();</span>
+<span class="nc" id="L116">    }</span>
+
+    private void readArguments() {
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (getArguments() == null) return;</span>
+
+<span class="nc" id="L121">        eventId = getArguments().getInt(&quot;eventId&quot;);</span>
+<span class="nc" id="L122">        userId  = getArguments().getInt(&quot;userId&quot;, -1);</span>
+<span class="nc" id="L123">        userDetailString = getArguments().getString(&quot;userDetails&quot;);</span>
+<span class="nc" id="L124">        nameText.setText(getArguments().getString(&quot;eventName&quot;));</span>
+<span class="nc" id="L125">        dateText.setText(getArguments().getString(&quot;eventDate&quot;));</span>
+<span class="nc" id="L126">        timeText.setText(getArguments().getString(&quot;eventTime&quot;));</span>
+<span class="nc" id="L127">        locationText.setText(getArguments().getString(&quot;eventLocation&quot;));</span>
+<span class="nc" id="L128">        ownerText.setText(&quot;by &quot; + getArguments().getString(&quot;ownerName&quot;, &quot;&quot;));</span>
+<span class="nc" id="L129">    }</span>
+
+    // ----------------------------------------------------------
+    // INTEREST CHECK ON OPEN (POST ONLY)
+    // ----------------------------------------------------------
+    private void checkInterestOnOpen() {
+<span class="nc" id="L135">        String url = BASE + eventId + &quot;/attend/&quot; + userId;</span>
+
+<span class="nc" id="L137">        StringRequest req = new StringRequest(</span>
+                Request.Method.POST,
+                url,
+                response -&gt; {
+
+                    try {
+<span class="nc" id="L143">                        JSONObject json = new JSONObject(response);</span>
+<span class="nc" id="L144">                        String status = json.optString(&quot;status&quot;);</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                        if (status.equalsIgnoreCase(&quot;warning&quot;)) {</span>
+                            // User already attending
+<span class="nc" id="L148">                            isInterested = true;</span>
+<span class="nc" id="L149">                            updateButton();</span>
+                        }
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                        else if (status.equalsIgnoreCase(&quot;success&quot;)) {</span>
+                            // User was NOT attending, POST added them
+                            // → Must immediately revert
+<span class="nc" id="L154">                            revertAccidentalJoin();</span>
+                        }
+<span class="nc" id="L156">                        Log.d(&quot;MESSAGE&quot;, status);</span>
+
+<span class="nc" id="L158">                    } catch (Exception ignored) {}</span>
+<span class="nc" id="L159">                },</span>
+<span class="nc" id="L160">                err -&gt; Toast.makeText(requireContext(), &quot;Check failed&quot;, Toast.LENGTH_SHORT).show()</span>
+        );
+
+<span class="nc" id="L163">        Volley.newRequestQueue(requireContext()).add(req);</span>
+<span class="nc" id="L164">    }</span>
+
+    // Undo accidental join caused by POST-on-open
+    private void revertAccidentalJoin() {
+<span class="nc" id="L168">        String url = BASE + eventId + &quot;/attend/&quot; + userId;</span>
+
+<span class="nc" id="L170">        StringRequest req = new StringRequest(</span>
+                Request.Method.DELETE,
+                url,
+                response -&gt; {
+<span class="nc" id="L174">                    isInterested = false;</span>
+<span class="nc" id="L175">                    updateButton();</span>
+<span class="nc" id="L176">                },</span>
+                err -&gt; {
+<span class="nc" id="L178">                    isInterested = false;</span>
+<span class="nc" id="L179">                    updateButton();</span>
+<span class="nc" id="L180">                }</span>
+        );
+
+<span class="nc" id="L183">        Volley.newRequestQueue(requireContext()).add(req);</span>
+<span class="nc" id="L184">    }</span>
+
+    // ----------------------------------------------------------
+    // JOIN EVENT (POST ON PRESS)
+    // ----------------------------------------------------------
+    private void joinEvent() {
+<span class="nc" id="L190">        String url = BASE + eventId + &quot;/attend/&quot; + userId;</span>
+
+<span class="nc" id="L192">        StringRequest req = new StringRequest(</span>
+                Request.Method.POST,
+                url,
+                response -&gt; {
+
+                    try {
+<span class="nc" id="L198">                        JSONObject json = new JSONObject(response);</span>
+<span class="nc" id="L199">                        String status = json.optString(&quot;status&quot;);</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                        if (status.equalsIgnoreCase(&quot;success&quot;) ||</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                                status.equalsIgnoreCase(&quot;warning&quot;)) {</span>
+<span class="nc" id="L203">                            isInterested = true;</span>
+                        }
+
+<span class="nc" id="L206">                    } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L208">                    updateButton();</span>
+<span class="nc" id="L209">                    loadAttendanceCount();</span>
+<span class="nc" id="L210">                },</span>
+<span class="nc" id="L211">                err -&gt; Toast.makeText(requireContext(),</span>
+<span class="nc" id="L212">                        &quot;Failed to join event&quot;, Toast.LENGTH_SHORT).show()</span>
+        );
+
+<span class="nc" id="L215">        Volley.newRequestQueue(requireContext()).add(req);</span>
+<span class="nc" id="L216">    }</span>
+
+    // ----------------------------------------------------------
+    // LEAVE EVENT (DELETE ON PRESS)
+    // ----------------------------------------------------------
+    private void leaveEvent() {
+<span class="nc" id="L222">        String url = BASE + eventId + &quot;/attend/&quot; + userId;</span>
+
+<span class="nc" id="L224">        StringRequest req = new StringRequest(</span>
+                Request.Method.DELETE,
+                url,
+                response -&gt; {
+<span class="nc" id="L228">                    isInterested = false;</span>
+<span class="nc" id="L229">                    updateButton();</span>
+<span class="nc" id="L230">                    loadAttendanceCount();</span>
+<span class="nc" id="L231">                },</span>
+<span class="nc" id="L232">                err -&gt; Toast.makeText(requireContext(),</span>
+<span class="nc" id="L233">                        &quot;Failed to leave event&quot;, Toast.LENGTH_SHORT).show()</span>
+        );
+
+<span class="nc" id="L236">        Volley.newRequestQueue(requireContext()).add(req);</span>
+<span class="nc" id="L237">    }</span>
+
+    // ----------------------------------------------------------
+    // ATTENDANCE COUNT
+    // ----------------------------------------------------------
+    private void loadAttendanceCount() {
+<span class="nc" id="L243">        String url = BASE + eventId + &quot;/attendees&quot;;</span>
+
+<span class="nc" id="L245">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                json -&gt; {
+<span class="nc" id="L250">                    int count = json.optInt(&quot;attendeeCount&quot;, 0);</span>
+<span class="nc" id="L251">                    attendeeChip.setText(count + &quot; going&quot;);</span>
+<span class="nc" id="L252">                },</span>
+<span class="nc" id="L253">                err -&gt; attendeeChip.setText(&quot;0 going&quot;)</span>
+        );
+
+<span class="nc" id="L256">        Volley.newRequestQueue(requireContext()).add(req);</span>
+<span class="nc" id="L257">    }</span>
+
+    // ----------------------------------------------------------
+    // UI UPDATE
+    // ----------------------------------------------------------
+    private void updateButton() {
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (isInterested) {</span>
+<span class="nc" id="L264">            interestButton.setText(&quot;Uninterested&quot;);</span>
+<span class="nc" id="L265">            interestButton.setBackgroundTintList(</span>
+<span class="nc" id="L266">                    ContextCompat.getColorStateList(requireContext(), R.color.red)</span>
+            );
+        } else {
+<span class="nc" id="L269">            interestButton.setText(&quot;Interested&quot;);</span>
+<span class="nc" id="L270">            interestButton.setBackgroundTintList(</span>
+<span class="nc" id="L271">                    ContextCompat.getColorStateList(requireContext(), R.color.blue)</span>
+            );
+        }
+<span class="nc" id="L274">    }</span>
+
+//    TODO: MAKE sure this mapping is tested
+    private void getFriendsAttendingEvent(){
+<span class="nc" id="L278">        String url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/&quot; + userId + &quot;/friendsAttending/&quot; + eventId;</span>
+
+<span class="nc" id="L280">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+<span class="nc" id="L284">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+<span class="nc" id="L287">                        handlingFriendsSuccess(response);</span>
+<span class="nc" id="L288">                        Log.d(&quot;RESPONSE&quot;, response.toString());</span>
+<span class="nc" id="L289">                    }</span>
+<span class="nc" id="L290">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L293">                Log.d(&quot;Volley Error&quot;, error.toString());</span>
+<span class="nc" id="L294">            }</span>
+        });
+
+<span class="nc" id="L297">        VolleySingleton.getInstance(requireContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L298">    }</span>
+
+    @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+    private void handlingFriendsSuccess(JSONArray response){
+<span class="nc" id="L302">        friends.clear();</span>
+        // response is a JsonArray so we loop through this
+        // array to get the Friend JsonObject
+<span class="nc" id="L305">        Log.d(&quot;SUCCESS&quot;,response.toString());</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        for (int i = 0; i &lt; response.length(); i++) {</span>
+            try {
+
+<span class="nc" id="L309">                JSONObject friendObject = response.getJSONObject(i);</span>
+<span class="nc" id="L310">                friends.add(new Friend(friendObject));</span>
+<span class="nc" id="L311">            } catch (JSONException e) {</span>
+<span class="nc" id="L312">                Log.d(&quot;RESPONSE PARSE ERROR&quot;, e.toString());</span>
+<span class="nc" id="L313">            }</span>
+        }
+<span class="nc" id="L315">        adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L316">    }</span>
+
+    // ----------------------------------------------------------
+    // DEBUG DIALOG
+    // ----------------------------------------------------------
+    private void showStatusDialog(String title, String content) {
+<span class="nc" id="L322">        androidx.appcompat.app.AlertDialog.Builder builder =</span>
+<span class="nc" id="L323">                new androidx.appcompat.app.AlertDialog.Builder(requireContext());</span>
+
+<span class="nc" id="L325">        TextView tv = new TextView(requireContext());</span>
+<span class="nc" id="L326">        tv.setPadding(50, 40, 50, 40);</span>
+<span class="nc" id="L327">        tv.setTextSize(15f);</span>
+<span class="nc" id="L328">        tv.setText(content);</span>
+
+<span class="nc" id="L330">        ScrollView scroll = new ScrollView(requireContext());</span>
+<span class="nc" id="L331">        scroll.addView(tv);</span>
+
+<span class="nc" id="L333">        builder.setTitle(title);</span>
+<span class="nc" id="L334">        builder.setView(scroll);</span>
+
+<span class="nc" id="L336">        builder.setPositiveButton(&quot;Close&quot;, null);</span>
+
+<span class="nc" id="L338">        builder.setNeutralButton(&quot;Copy&quot;, (d, w) -&gt; {</span>
+<span class="nc" id="L339">            android.content.ClipboardManager clipboard =</span>
+                    (android.content.ClipboardManager)
+<span class="nc" id="L341">                            requireContext().getSystemService(requireContext().CLIPBOARD_SERVICE);</span>
+
+<span class="nc" id="L343">            android.content.ClipData clip =</span>
+<span class="nc" id="L344">                    android.content.ClipData.newPlainText(&quot;Server Response&quot;, content);</span>
+<span class="nc" id="L345">            clipboard.setPrimaryClip(clip);</span>
+
+<span class="nc" id="L347">            Toast.makeText(requireContext(), &quot;Copied&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L348">        });</span>
+
+<span class="nc" id="L350">        builder.show();</span>
+<span class="nc" id="L351">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FriendAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.adapters</a> &gt; <span class="el_source">FriendAdapter.java</span></div><h1>FriendAdapter.java</h1><pre class="source lang-java linenums">package com.example.synergy.adapters;
+
+
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+
+import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.synergy.VolleySingleton;
+
+import com.example.synergy.activities.FriendChatActivity;
+
+import com.example.synergy.items.Friend;
+import com.example.synergy.R;
+
+import com.example.synergy.sheets.friendsEventListSheet;
+
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.List;
+
+public class FriendAdapter extends RecyclerView.Adapter&lt;FriendAdapter.FriendViewHolder&gt; {
+
+
+    private final Context context;
+    private List&lt;Friend&gt; friends;
+
+    private final int userId;
+    private final String userDetailString;
+
+    /**
+     * Initializes the Friend Adapter, which handles populating the list on
+     * the fragment
+     *
+     * @param context : The context of the parent activity
+     * @param friends : The list of friends that is returned from a HTTP Request
+     * @param userDetailString : User Detail that is passed during login
+     */
+<span class="fc" id="L59">    public FriendAdapter(Context context, List&lt;Friend&gt; friends, String userDetailString){</span>
+<span class="fc" id="L60">        this.context = context;</span>
+<span class="fc" id="L61">        this.friends = friends;</span>
+<span class="fc" id="L62">        this.userDetailString = userDetailString;</span>
+
+        try {
+<span class="fc" id="L65">            this.userId = new JSONObject(userDetailString).getInt(&quot;id&quot;);</span>
+<span class="nc" id="L66">        } catch (JSONException e) {</span>
+<span class="nc" id="L67">            throw new RuntimeException(e);</span>
+<span class="fc" id="L68">        }</span>
+
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Initializesx the Friend item view holder, so that the layout for a friend item
+     * on the list is inflated
+     *
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to
+     *                 an adapter position.
+     * @param viewType The view type of the new View.
+     * @return FriendViewHolder
+     */
+    @NonNull
+    @Override
+    public FriendViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="fc" id="L84">        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_friend, parent, false);</span>
+
+<span class="fc" id="L86">        return new FriendViewHolder(view);</span>
+    }
+
+    /**
+     *  Provide functionality for the currently bind Friend Item on the list.
+     *
+     * @param holder : The holder of the friend list
+     * @param position : position of the selected Friend Item on the holder
+     */
+    @Override
+    public void onBindViewHolder(@NonNull FriendViewHolder holder, int position) {
+<span class="fc" id="L97">        Friend friend = friends.get(position);</span>
+<span class="fc" id="L98">        holder.friendName.setText(friend.getName());</span>
+
+
+<span class="fc" id="L101">        holder.unfriend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L102">            handleUnfriendAction(friend, position);</span>
+
+<span class="nc" id="L104">        });</span>
+
+<span class="fc" id="L106">        holder.friendEvents.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L107">            friendsEventListSheet sheet = friendsEventListSheet.newInstance(userDetailString, friend.getId());</span>
+<span class="nc" id="L108">            FragmentActivity activity = (FragmentActivity) context;</span>
+<span class="nc" id="L109">            sheet.show(activity.getSupportFragmentManager(), &quot;friendsEventListSheet&quot;);</span>
+<span class="nc" id="L110">        });</span>
+
+
+
+<span class="fc" id="L114">        holder.itemView.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L115">            getFriendChats(userId, friend);</span>
+<span class="fc" id="L116">        });</span>
+
+<span class="fc" id="L118">    }</span>
+
+    private void startChat(int chatroomId, Friend friend){
+<span class="fc" id="L121">        Toast.makeText(context, &quot;Chat clicked for &quot; + friend.getName(), Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L122">        Intent i = new Intent(context, FriendChatActivity.class);</span>
+<span class="fc" id="L123">        i.putExtra(&quot;friend_name&quot;, friend.getName());</span>
+<span class="fc" id="L124">        i.putExtra(&quot;friend_id&quot;, friend.getId());</span>
+<span class="fc" id="L125">        i.putExtra(&quot;chatroom_id&quot;, chatroomId);</span>
+<span class="fc" id="L126">        i.putExtra(&quot;userId&quot;,userId);</span>
+<span class="fc" id="L127">        context.startActivity(i);</span>
+
+<span class="fc" id="L129">    }</span>
+
+    private void handleUnfriendAction(Friend friend, int position){
+<span class="nc" id="L132">        new AlertDialog.Builder(context)</span>
+<span class="nc" id="L133">                .setTitle(&quot;Unfriend User&quot;)</span>
+<span class="nc" id="L134">                .setMessage(&quot;Are you sure you want to unfriend this person?&quot;)</span>
+<span class="nc" id="L135">                .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; {</span>
+                    try {
+<span class="nc" id="L137">                        unfriendRequest(friend.getId(), position);</span>
+<span class="nc" id="L138">                    } catch (JSONException e) {</span>
+<span class="nc" id="L139">                        throw new RuntimeException(e);</span>
+<span class="nc" id="L140">                    }</span>
+
+<span class="nc" id="L142">                })</span>
+<span class="nc" id="L143">                .setNegativeButton(&quot;No&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L144">                    dialog.dismiss(); // just close the dialog</span>
+<span class="nc" id="L145">                })</span>
+<span class="nc" id="L146">                .show();</span>
+<span class="nc" id="L147">    }</span>
+
+    /**
+     *  Update the list based on the filtered list
+     * @param filteredList : list that is returned after filtering
+     */
+    @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+    public void updateList(List&lt;Friend&gt; filteredList) {
+<span class="nc" id="L155">        this.friends = filteredList; // assuming your list variable is called userList</span>
+<span class="nc" id="L156">        notifyDataSetChanged();</span>
+<span class="nc" id="L157">    }</span>
+
+    /**
+     *  Get number of friend items on the list
+     * @return size of the list
+     */
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L165">        return friends.size();</span>
+    }
+
+    public static class FriendViewHolder extends RecyclerView.ViewHolder {
+        TextView friendName;
+        ImageView unfriend;
+        ImageView friendEvents;
+
+        /**
+         *
+         */
+        public FriendViewHolder(@NonNull View itemView){
+<span class="fc" id="L177">            super(itemView);</span>
+<span class="fc" id="L178">            friendName = itemView.findViewById(R.id.friendName);</span>
+<span class="fc" id="L179">            unfriend = itemView.findViewById(R.id.unfriendButton);</span>
+<span class="fc" id="L180">            friendEvents = itemView.findViewById(R.id.interestedEventsButton);</span>
+
+<span class="fc" id="L182">        }</span>
+    }
+
+    /**
+     *  A server request that removes the friend from the user's table which
+     *  causes the friends list to be updated and filtered. Returns a JSOnObject,
+     *  which isn't relevant on successful response it is removed from the list
+     *  and the UI is updated
+     *
+     * @param friendId : friend to be removed
+     * @param position : position of the friend on the list View
+     * @throws JSONException : Error in parsing the JSON
+     */
+    private void unfriendRequest(int friendId, int position) throws JSONException {
+
+<span class="nc" id="L197">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/friends/remove/&quot;</span>
+                + this.userId + &quot;/&quot; + friendId;
+
+<span class="nc" id="L200">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.DELETE,
+                server_url,
+                null,
+<span class="nc" id="L204">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+
+<span class="nc" id="L208">                        friends.remove(position);</span>
+<span class="nc" id="L209">                        notifyItemRemoved(position);</span>
+
+<span class="nc" id="L211">                        Toast.makeText(context, &quot;Unfriended&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L212">                    }</span>
+                },
+                volleyError -&gt; {
+<span class="nc" id="L215">                    Toast.makeText(context, volleyError.toString(), Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L216">                }</span>
+
+        );
+
+<span class="nc" id="L220">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L221">    }</span>
+
+
+    private void getFriendChats(int userId, Friend friend){
+<span class="fc" id="L225">        String server_url = &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/chat/friendChats/&quot; + userId;</span>
+
+<span class="fc" id="L227">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                server_url,
+                null,
+<span class="fc" id="L231">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                        for (int i =0; i &lt; response.length(); i++){</span>
+                            try {
+<span class="fc" id="L236">                                JSONObject friend_object = (JSONObject) response.get(i);</span>
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">                                if (friend_object.getInt(&quot;friendUserId&quot;) == friend.getId()){</span>
+<span class="fc" id="L238">                                    int chatroomId = friend_object.getInt(&quot;chatId&quot;);</span>
+<span class="fc" id="L239">                                    startChat(chatroomId, friend);</span>
+<span class="fc" id="L240">                                    break;</span>
+                                }
+<span class="nc" id="L242">                            } catch (JSONException e) {</span>
+<span class="nc" id="L243">                                throw new RuntimeException(e);</span>
+<span class="nc" id="L244">                            }</span>
+
+                        }
+<span class="fc" id="L247">                    }</span>
+<span class="fc" id="L248">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L251">                Log.d(&quot;ERROR&quot;, error.toString());</span>
+<span class="nc" id="L252">            }</span>
+        });
+
+<span class="fc" id="L255">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="fc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

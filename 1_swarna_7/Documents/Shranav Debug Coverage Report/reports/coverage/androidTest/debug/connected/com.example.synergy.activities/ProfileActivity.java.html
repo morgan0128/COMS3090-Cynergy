@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProfileActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.synergy.activities</a> &gt; <span class="el_source">ProfileActivity.java</span></div><h1>ProfileActivity.java</h1><pre class="source lang-java linenums">package com.example.synergy.activities;
+
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.example.synergy.R;
+import com.example.synergy.VolleySingleton;
+import com.example.synergy.sheets.EditProfileBottomSheet;
+import com.google.android.material.imageview.ShapeableImageView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L40">public class ProfileActivity extends AppCompatActivity {</span>
+
+    private static final String DELETE_URL =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080/api/profile/delete&quot;;
+    private static final String BASE_URL =
+            &quot;http://coms-3090-016.class.las.iastate.edu:8080&quot;;
+    private static final String PFP_URL = BASE_URL + &quot;/api/profile/&quot;;
+
+    private String profileResponseJson;
+    private String email;
+<span class="nc" id="L50">    private int userId = -1;</span>
+<span class="nc" id="L51">    private int profileId = -1;</span>
+
+    private TextView nameText, ageText, genderText, bioText, interestsText;
+    private Button editProfileBtn, deleteProfileBtn;
+    private ImageButton backProfileBtn;
+    private ShapeableImageView profilePicture;
+    private ImageButton changePhotoButton, deletePhotoButton;
+
+<span class="nc" id="L59">    private final ArrayList&lt;String&gt; interestsList = new ArrayList&lt;&gt;();</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L63">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L64">        EdgeToEdge.enable(this);</span>
+<span class="nc" id="L65">        setContentView(R.layout.activity_profile);</span>
+
+<span class="nc" id="L67">        Bundle extras = getIntent().getExtras();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (extras != null) {</span>
+<span class="nc" id="L69">            profileResponseJson = extras.getString(&quot;response&quot;);</span>
+<span class="nc" id="L70">            email = extras.getString(&quot;email&quot;);</span>
+<span class="nc" id="L71">            userId = extras.getInt(&quot;userId&quot;, -1);</span>
+        }
+
+<span class="nc" id="L74">        initViews();</span>
+<span class="nc" id="L75">        parseProfileDto(profileResponseJson);</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (userId &gt; 0) {</span>
+<span class="nc" id="L78">            loadProfilePicture(userId);</span>
+        }
+
+<span class="nc" id="L81">        editProfileBtn.setOnClickListener(v -&gt; openEditProfileSheet());</span>
+
+<span class="nc" id="L83">        deleteProfileBtn.setOnClickListener(v -&gt; confirmAndDeleteProfile());</span>
+
+<span class="nc" id="L85">        backProfileBtn.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L86">            Intent intent = new Intent(ProfileActivity.this, HomeActivity.class);</span>
+<span class="nc" id="L87">            intent.putExtra(&quot;response&quot;, profileResponseJson);</span>
+<span class="nc" id="L88">            intent.putExtra(&quot;email&quot;, email);</span>
+<span class="nc" id="L89">            startActivity(intent);</span>
+<span class="nc" id="L90">            finish();</span>
+<span class="nc" id="L91">        });</span>
+
+<span class="nc" id="L93">        changePhotoButton.setOnClickListener(v -&gt; showAvatarChooser());</span>
+
+<span class="nc" id="L95">        deletePhotoButton.setOnClickListener(v -&gt; confirmAndDeleteProfilePicture());</span>
+
+<span class="nc" id="L97">        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings_root), (v, insets) -&gt; {</span>
+<span class="nc" id="L98">            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="nc" id="L99">            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="nc" id="L100">            return insets;</span>
+        });
+<span class="nc" id="L102">    }</span>
+
+    private void initViews() {
+<span class="nc" id="L105">        nameText = findViewById(R.id.profileName);</span>
+<span class="nc" id="L106">        ageText = findViewById(R.id.profileAge);</span>
+<span class="nc" id="L107">        bioText = findViewById(R.id.profileBio);</span>
+<span class="nc" id="L108">        genderText = findViewById(R.id.profileGender);</span>
+<span class="nc" id="L109">        interestsText = findViewById(R.id.profileInterests);</span>
+
+<span class="nc" id="L111">        editProfileBtn = findViewById(R.id.editProfileButton);</span>
+<span class="nc" id="L112">        deleteProfileBtn = findViewById(R.id.deleteProfileButton);</span>
+<span class="nc" id="L113">        backProfileBtn = findViewById(R.id.backButton);</span>
+
+<span class="nc" id="L115">        profilePicture = findViewById(R.id.profilePicture);</span>
+<span class="nc" id="L116">        changePhotoButton = findViewById(R.id.changePhotoButton);</span>
+<span class="nc" id="L117">        deletePhotoButton = findViewById(R.id.deletePhotoButton);</span>
+<span class="nc" id="L118">    }</span>
+
+    private void parseProfileDto(String json) {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (json == null) return;</span>
+
+        try {
+<span class="nc" id="L124">            JSONObject profileObj = new JSONObject(json);</span>
+<span class="nc" id="L125">            Log.d(&quot;profile&quot;, profileObj.toString());</span>
+
+<span class="nc" id="L127">            profileId = profileObj.optInt(&quot;profileId&quot;, -1);</span>
+
+<span class="nc" id="L129">            String profileName = profileObj.optString(&quot;profileName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L130">            String profileBio = profileObj.optString(&quot;profileBio&quot;, &quot;&quot;);</span>
+<span class="nc" id="L131">            int age = profileObj.optInt(&quot;age&quot;, 0);</span>
+<span class="nc" id="L132">            String gender = profileObj.optString(&quot;gender&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L134">            nameText.setText(profileName);</span>
+<span class="nc" id="L135">            bioText.setText(profileBio);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            ageText.setText(&quot;Age: &quot; + (age &gt; 0 ? age : 0));</span>
+<span class="nc" id="L137">            genderText.setText(&quot;Gender: &quot; + gender);</span>
+
+<span class="nc" id="L139">            interestsList.clear();</span>
+<span class="nc" id="L140">            JSONArray interestsArray = profileObj.optJSONArray(&quot;interests&quot;);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (interestsArray != null) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                for (int i = 0; i &lt; interestsArray.length(); i++) {</span>
+<span class="nc" id="L143">                    interestsList.add(interestsArray.optString(i));</span>
+                }
+            }
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (interestsList.isEmpty()) {</span>
+<span class="nc" id="L148">                interestsText.setText(&quot;Interests: –&quot;);</span>
+            } else {
+<span class="nc" id="L150">                String joined = android.text.TextUtils.join(&quot;, &quot;, interestsList);</span>
+<span class="nc" id="L151">                interestsText.setText(&quot;Interests: &quot; + joined);</span>
+            }
+
+<span class="nc" id="L154">            JSONObject userObj = profileObj.optJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (userObj != null) {</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (userId &lt;= 0) {</span>
+<span class="nc" id="L157">                    userId = userObj.optInt(&quot;id&quot;, -1);</span>
+                }
+<span class="nc bnc" id="L159" title="All 4 branches missed.">                if (email == null || email.isEmpty()) {</span>
+<span class="nc" id="L160">                    email = userObj.optString(&quot;emailId&quot;, email);</span>
+                }
+            }
+
+<span class="nc" id="L164">        } catch (JSONException e) {</span>
+<span class="nc" id="L165">            Log.e(&quot;ProfileActivity&quot;, &quot;parse error&quot;, e);</span>
+<span class="nc" id="L166">        }</span>
+<span class="nc" id="L167">    }</span>
+
+    private void openEditProfileSheet() {
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (profileId &lt;= 0) {</span>
+<span class="nc" id="L171">            showStatusDialog(&quot;Error&quot;, &quot;Invalid profile ID.&quot;, false);</span>
+<span class="nc" id="L172">            return;</span>
+        }
+
+<span class="nc" id="L175">        EditProfileBottomSheet fragment = EditProfileBottomSheet.newInstance(</span>
+<span class="nc" id="L176">                nameText.getText().toString(),</span>
+<span class="nc" id="L177">                ageText.getText().toString().replace(&quot;Age: &quot;, &quot;&quot;),</span>
+<span class="nc" id="L178">                bioText.getText().toString(),</span>
+<span class="nc" id="L179">                genderText.getText().toString().replace(&quot;Gender: &quot;, &quot;&quot;),</span>
+<span class="nc" id="L180">                String.valueOf(profileId),</span>
+                new ArrayList&lt;&gt;(interestsList)
+        );
+
+<span class="nc" id="L184">        fragment.setOnProfileUpdatedListener((newName, newAge, newBio, newGender) -&gt; {</span>
+<span class="nc" id="L185">            nameText.setText(newName);</span>
+<span class="nc" id="L186">            ageText.setText(&quot;Age: &quot; + newAge);</span>
+<span class="nc" id="L187">            bioText.setText(newBio);</span>
+<span class="nc" id="L188">            genderText.setText(&quot;Gender: &quot; + newGender);</span>
+<span class="nc" id="L189">        });</span>
+
+<span class="nc" id="L191">        fragment.show(getSupportFragmentManager(), &quot;EditProfileFragment&quot;);</span>
+<span class="nc" id="L192">    }</span>
+
+    private void confirmAndDeleteProfile() {
+<span class="nc" id="L195">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L196">                .setTitle(&quot;Confirm Delete&quot;)</span>
+<span class="nc" id="L197">                .setMessage(&quot;Are you sure you want to delete this profile?&quot;)</span>
+<span class="nc" id="L198">                .setIcon(android.R.drawable.ic_dialog_alert)</span>
+<span class="nc" id="L199">                .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; deleteProfile())</span>
+<span class="nc" id="L200">                .setNegativeButton(&quot;No&quot;, null)</span>
+<span class="nc" id="L201">                .show();</span>
+<span class="nc" id="L202">    }</span>
+
+    private void deleteProfile() {
+<span class="nc bnc" id="L205" title="All 4 branches missed.">        if (email == null || email.isEmpty()) {</span>
+<span class="nc" id="L206">            showStatusDialog(&quot;Error&quot;, &quot;Email not available.&quot;, false);</span>
+<span class="nc" id="L207">            return;</span>
+        }
+
+<span class="nc" id="L210">        Log.d(&quot;email&quot;,email);</span>
+
+<span class="nc" id="L212">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L214">            body.put(&quot;emailId&quot;, email);</span>
+<span class="nc" id="L215">        } catch (JSONException e) {</span>
+<span class="nc" id="L216">            e.printStackTrace();</span>
+<span class="nc" id="L217">            return;</span>
+<span class="nc" id="L218">        }</span>
+
+<span class="nc" id="L220">        JsonObjectRequest deleteRequest = new JsonObjectRequest(</span>
+                Request.Method.DELETE,
+                DELETE_URL,
+                body,
+                response -&gt; {
+<span class="nc" id="L225">                    showStatusDialog(&quot;Success&quot;, &quot;Profile deleted successfully!&quot;, true);</span>
+<span class="nc" id="L226">                },</span>
+                error -&gt; {
+<span class="nc" id="L228">                    Log.e(&quot;DeleteProfile&quot;, error.toString());</span>
+<span class="nc" id="L229">                    showStatusDialog(&quot;Error&quot;, &quot;Profile deletion failed.&quot;, false);</span>
+<span class="nc" id="L230">                }</span>
+<span class="nc" id="L231">        ){</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L234">                Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L235">                headers.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L236">                return headers;</span>
+            }
+        };
+
+<span class="nc" id="L240">        VolleySingleton.getInstance(this).addToRequestQueue(deleteRequest);</span>
+<span class="nc" id="L241">    }</span>
+
+    private void loadProfilePicture(int userId) {
+<span class="nc" id="L244">        String url = PFP_URL + userId + &quot;/picture&quot;;</span>
+
+<span class="nc" id="L246">        StringRequest getRequest = new StringRequest(</span>
+                Request.Method.GET,
+                url,
+                response -&gt; {
+                    try {
+<span class="nc bnc" id="L251" title="All 4 branches missed.">                        if (response != null &amp;&amp; !response.isEmpty()) {</span>
+<span class="nc" id="L252">                            byte[] decodedBytes = Base64.decode(response, Base64.DEFAULT);</span>
+<span class="nc" id="L253">                            Bitmap bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                            if (bitmap != null) {</span>
+<span class="nc" id="L255">                                profilePicture.setImageBitmap(bitmap);</span>
+                            }
+                        }
+<span class="nc" id="L258">                    } catch (Exception e) {</span>
+<span class="nc" id="L259">                        Log.e(&quot;PFP Decode&quot;, &quot;decode error&quot;, e);</span>
+<span class="nc" id="L260">                    }</span>
+<span class="nc" id="L261">                },</span>
+<span class="nc" id="L262">                error -&gt; Log.e(&quot;PFP Load&quot;, &quot;error: &quot; + error)</span>
+        );
+
+<span class="nc" id="L265">        VolleySingleton.getInstance(this).addToRequestQueue(getRequest);</span>
+<span class="nc" id="L266">    }</span>
+
+    private void uploadProfilePicture(Bitmap bitmap) {
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (userId &lt;= 0) {</span>
+<span class="nc" id="L270">            showStatusDialog(&quot;Error&quot;, &quot;Invalid user ID.&quot;, false);</span>
+<span class="nc" id="L271">            return;</span>
+        }
+
+<span class="nc" id="L274">        ByteArrayOutputStream baos = new ByteArrayOutputStream();</span>
+<span class="nc" id="L275">        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);</span>
+<span class="nc" id="L276">        byte[] imageBytes = baos.toByteArray();</span>
+<span class="nc" id="L277">        String base64Image = Base64.encodeToString(imageBytes, Base64.NO_WRAP);</span>
+
+<span class="nc" id="L279">        String url = PFP_URL + userId + &quot;/picture&quot;;</span>
+
+<span class="nc" id="L281">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L283">            body.put(&quot;image&quot;, base64Image);</span>
+<span class="nc" id="L284">        } catch (JSONException e) {</span>
+<span class="nc" id="L285">            e.printStackTrace();</span>
+<span class="nc" id="L286">            return;</span>
+<span class="nc" id="L287">        }</span>
+
+<span class="nc" id="L289">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                url,
+                body,
+<span class="nc" id="L293">                response -&gt; showStatusDialog(&quot;Success&quot;, &quot;Profile picture updated!&quot;, false),</span>
+                error -&gt; {
+<span class="nc" id="L295">                    Log.e(&quot;PFP Upload Error&quot;, error.toString());</span>
+<span class="nc" id="L296">                    showStatusDialog(&quot;Error&quot;, &quot;Failed to upload profile picture.&quot;, false);</span>
+<span class="nc" id="L297">                }</span>
+<span class="nc" id="L298">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L301">                Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L302">                headers.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L303">                return headers;</span>
+            }
+        };
+
+<span class="nc" id="L307">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L308">    }</span>
+
+
+    private void confirmAndDeleteProfilePicture() {
+<span class="nc" id="L312">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L313">                .setTitle(&quot;Remove Picture&quot;)</span>
+<span class="nc" id="L314">                .setMessage(&quot;Do you want to remove your profile picture?&quot;)</span>
+<span class="nc" id="L315">                .setPositiveButton(&quot;Yes&quot;, (dialog, which) -&gt; deleteProfilePicture())</span>
+<span class="nc" id="L316">                .setNegativeButton(&quot;No&quot;, null)</span>
+<span class="nc" id="L317">                .show();</span>
+<span class="nc" id="L318">    }</span>
+
+    private void deleteProfilePicture() {
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (userId &lt;= 0) {</span>
+<span class="nc" id="L322">            showStatusDialog(&quot;Error&quot;, &quot;Invalid user ID.&quot;, false);</span>
+<span class="nc" id="L323">            return;</span>
+        }
+
+<span class="nc" id="L326">        String url = PFP_URL + userId + &quot;/picture&quot;;</span>
+
+<span class="nc" id="L328">        StringRequest deleteRequest = new StringRequest(</span>
+                Request.Method.DELETE,
+                url,
+                response -&gt; {
+<span class="nc" id="L332">                    profilePicture.setImageResource(R.drawable.lion);</span>
+<span class="nc" id="L333">                    showStatusDialog(&quot;Success&quot;, &quot;Profile picture removed.&quot;, false);</span>
+<span class="nc" id="L334">                },</span>
+<span class="nc" id="L335">                error -&gt; showStatusDialog(&quot;Error&quot;, &quot;Failed to delete profile picture.&quot;, false)</span>
+        );
+
+<span class="nc" id="L338">        VolleySingleton.getInstance(this).addToRequestQueue(deleteRequest);</span>
+<span class="nc" id="L339">    }</span>
+
+    private void showAvatarChooser() {
+<span class="nc" id="L342">        AlertDialog.Builder builder = new AlertDialog.Builder(this);</span>
+<span class="nc" id="L343">        builder.setCancelable(true);</span>
+
+<span class="nc" id="L345">        android.view.View view = getLayoutInflater().inflate(R.layout.dialog_avatar_chooser, null);</span>
+<span class="nc" id="L346">        builder.setView(view);</span>
+
+<span class="nc" id="L348">        ImageView avatarLion = view.findViewById(R.id.avatarLion);</span>
+<span class="nc" id="L349">        ImageView avatarProfile1 = view.findViewById(R.id.profile1);</span>
+<span class="nc" id="L350">        ImageView avatarProfile2 = view.findViewById(R.id.profile2);</span>
+<span class="nc" id="L351">        ImageView avatarProfile3 = view.findViewById(R.id.profile3);</span>
+<span class="nc" id="L352">        ImageView avatarProfile4 = view.findViewById(R.id.profile4);</span>
+<span class="nc" id="L353">        ImageView avatarProfile5 = view.findViewById(R.id.profile5);</span>
+
+<span class="nc" id="L355">        AlertDialog dialog = builder.create();</span>
+
+<span class="nc" id="L357">        android.view.View.OnClickListener avatarClickListener = v -&gt; {</span>
+            int resId;
+
+<span class="nc bnc" id="L360" title="All 2 branches missed.">            if (v == avatarLion) {</span>
+<span class="nc" id="L361">                resId = R.drawable.lion;</span>
+<span class="nc bnc" id="L362" title="All 2 branches missed.">            } else if (v == avatarProfile1) {</span>
+<span class="nc" id="L363">                resId = R.drawable.profile_1;</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            } else if (v == avatarProfile2) {</span>
+<span class="nc" id="L365">                resId = R.drawable.profile_2;</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            } else if (v == avatarProfile3) {</span>
+<span class="nc" id="L367">                resId = R.drawable.profile_3;</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">            } else if (v == avatarProfile4) {</span>
+<span class="nc" id="L369">                resId = R.drawable.profile_4;</span>
+            } else {
+<span class="nc" id="L371">                resId = R.drawable.profile_5;</span>
+            }
+
+<span class="nc" id="L374">            Bitmap bmp = BitmapFactory.decodeResource(getResources(), resId);</span>
+<span class="nc" id="L375">            Bitmap scaled = Bitmap.createScaledBitmap(bmp, 512, 512, true);</span>
+
+<span class="nc" id="L377">            profilePicture.setImageBitmap(scaled);</span>
+<span class="nc" id="L378">            uploadProfilePicture(scaled);</span>
+
+<span class="nc" id="L380">            dialog.dismiss();</span>
+<span class="nc" id="L381">        };</span>
+
+<span class="nc" id="L383">        avatarLion.setOnClickListener(avatarClickListener);</span>
+<span class="nc" id="L384">        avatarProfile1.setOnClickListener(avatarClickListener);</span>
+<span class="nc" id="L385">        avatarProfile2.setOnClickListener(avatarClickListener);</span>
+<span class="nc" id="L386">        avatarProfile3.setOnClickListener(avatarClickListener);</span>
+<span class="nc" id="L387">        avatarProfile4.setOnClickListener(avatarClickListener);</span>
+<span class="nc" id="L388">        avatarProfile5.setOnClickListener(avatarClickListener);</span>
+
+<span class="nc" id="L390">        dialog.show();</span>
+<span class="nc" id="L391">    }</span>
+
+    private void showStatusDialog(String title, String message, boolean dismissOnOk) {
+<span class="nc" id="L394">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L395">                .setTitle(title)</span>
+<span class="nc" id="L396">                .setMessage(message)</span>
+<span class="nc" id="L397">                .setCancelable(false)</span>
+<span class="nc" id="L398">                .setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L399">                    dialog.dismiss();</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">                    if (dismissOnOk) {</span>
+<span class="nc" id="L401">                        finish();</span>
+                    }
+<span class="nc" id="L403">                })</span>
+<span class="nc" id="L404">                .show();</span>
+<span class="nc" id="L405">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>
